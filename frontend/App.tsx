@@ -24,6 +24,25 @@ import StudentDashboard from './screens/StudentDashboard.tsx';
 import FacultyProfile from './screens/FacultyProfile.tsx';
 import Notifications from './screens/Notifications.tsx';
 import NotificationDetails from './screens/NotificationDetails.tsx';
+import AssignmentSubmission from './screens/AssignmentSubmission.tsx';
+import AssignmentSubmissionsFaculty from './screens/AssignmentSubmissionsFaculty.tsx';
+import AdminLogin from './screens/AdminLogin.tsx';
+import InstituteAdminDashboard from './screens/InstituteAdminDashboard.tsx';
+import CreateFaculty from './screens/CreateFaculty.tsx';
+import CreateTA from './screens/CreateTA.tsx';
+import SuperAdminDashboard from './screens/SuperAdminDashboard.tsx';
+import CreateInstituteAdmin from './screens/CreateInstituteAdmin.tsx';
+import ListOfAllInstituteAdmins from './screens/ListOfAllInstituteAdmins.tsx';
+import ListOfFacultiesByInstituteAdmin from './screens/ListOfFacultiesByInstituteAdmin.tsx';
+import ListOfTAsByInstituteAdmin from './screens/ListOfTAsByInstituteAdmin.tsx';
+import LoadingComponent from './screens/LoadingComponent.tsx';
+import ListOfStudents from './screens/ListOfStudents.tsx';
+import EvaluteAssignment from './screens/EvaluteAssignment.tsx';
+import Tokens from './screens/Tokens.tsx';
+import RaiseAToken from './screens/RaiseAToken.tsx';
+import TokenChats from './screens/TokenChats.tsx';
+import GradeSubmissionPerStudent from './screens/GradeSubmissionPerStudent.tsx';
+import ListCourseBySemesterAndInstitute from './screens/ListCourseBySemesterAndInstitute.tsx';
 
 export type RootStackParamList = {
   StudentLogin: undefined;
@@ -47,6 +66,25 @@ export type RootStackParamList = {
   FacultyProfile: undefined;
   Notifications: undefined;
   NotificationDetails: {notificationId: number};
+  AssignmentSubmission: {assignmentId: number};
+  AssignmentSubmissionsFaculty: {assignmentId: number};
+  AdminLogin: undefined;
+  InstituteAdminDashboard: undefined;
+  CreateFaculty: undefined;
+  CreateTA: undefined;
+  SuperAdminDashboard: undefined;
+  CreateInstituteAdmin: undefined;
+  ListOfAllInstituteAdmins: undefined;
+  ListOfFacultiesByInstituteAdmin: undefined;
+  ListOfTAsByInstituteAdmin: undefined;
+  LoadingComponent: undefined;
+  ListOfStudents: {courseId: number};
+  EvaluteAssignment: {courseId: number};
+  Tokens: {courseId: number; courseName: string; studentEmail: string};
+  RaiseAToken: {courseId: number; courseName: string};
+  TokenChats: {token: string};
+  GradeSubmissionPerStudent: {courseId: number; courseName: string};
+  ListCourseBySemesterAndInstitute: {semester: number; instituteId: number};
 };
 
 // Create stack navigator
@@ -55,7 +93,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const App = () => {
   return (
     <NavigationContainer style={{fontFamily: 'arial'}}>
-      <Stack.Navigator initialRouteName="Notifications">
+      <Stack.Navigator initialRouteName="AdminLogin">
         <Stack.Screen
           name="StudentLogin"
           component={StudentLogin}
@@ -159,6 +197,101 @@ const App = () => {
         <Stack.Screen
           name="NotificationDetails"
           component={NotificationDetails}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="AssignmentSubmission"
+          component={AssignmentSubmission}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="AssignmentSubmissionsFaculty"
+          component={AssignmentSubmissionsFaculty}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="AdminLogin"
+          component={AdminLogin}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="InstituteAdminDashboard"
+          component={InstituteAdminDashboard}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="CreateFaculty"
+          component={CreateFaculty}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="CreateTA"
+          component={CreateTA}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="SuperAdminDashboard"
+          component={SuperAdminDashboard}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="CreateInstituteAdmin"
+          component={CreateInstituteAdmin}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="ListOfAllInstituteAdmins"
+          component={ListOfAllInstituteAdmins}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="ListOfFacultiesByInstituteAdmin"
+          component={ListOfFacultiesByInstituteAdmin}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="ListOfTAsByInstituteAdmin"
+          component={ListOfTAsByInstituteAdmin}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="LoadingComponent"
+          component={LoadingComponent}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="ListOfStudents"
+          component={ListOfStudents}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="EvaluteAssignment"
+          component={EvaluteAssignment}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="Tokens"
+          component={Tokens}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="RaiseAToken"
+          component={RaiseAToken}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="TokenChats"
+          component={TokenChats}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="GradeSubmissionPerStudent"
+          component={GradeSubmissionPerStudent}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="ListCourseBySemesterAndInstitute"
+          component={ListCourseBySemesterAndInstitute}
           options={{headerShown: false}}
         />
       </Stack.Navigator>
