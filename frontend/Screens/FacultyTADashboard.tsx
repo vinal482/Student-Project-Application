@@ -41,7 +41,7 @@ const FacultyTADashboard = ({route}: FacultyTADashboardProps) => {
   const retrieveData = async () => {
     setLoading(true);
     try {
-      const role = JSON.parse(await AsyncStorage.getItem('role'));
+      const role = await JSON.parse(await AsyncStorage.getItem('role'));
       if (role === null) {
         await AsyncStorage.clear();
         navigation.replace('FacultyTALogin');
@@ -52,7 +52,7 @@ const FacultyTADashboard = ({route}: FacultyTADashboardProps) => {
       let emailId = '';
       let response = {};
       if (role === '1') {
-        emailId = JSON.parse(await AsyncStorage.getItem('facultyEmail'));
+        emailId = await JSON.parse(await AsyncStorage.getItem('facultyEmail'));
         if (emailId === null) {
           await AsyncStorage.clear();
           navigation.replace('FacultyTALogin');
@@ -68,7 +68,7 @@ const FacultyTADashboard = ({route}: FacultyTADashboardProps) => {
           'facultyName',
           JSON.stringify(response.data.name),
         );
-      } else {
+      } else if (role === '0') {
         emailId = JSON.parse(await AsyncStorage.getItem('taEmail'));
         if (emailId === null) {
           await AsyncStorage.clear();
@@ -80,11 +80,29 @@ const FacultyTADashboard = ({route}: FacultyTADashboardProps) => {
         );
         console.log('Email:', emailId);
         await setTAData(response.data);
+        await AsyncStorage.setItem('taIsAvailable', JSON.stringify(response.data.isAvailable));
         console.log('TA Data:', response.data.currentCourses);
-        if(response.data.currentCourses !== null)
+        if (response.data.currentCourses !== null)
           await setCurrentCourses(response.data.currentCourses);
         await AsyncStorage.setItem(
           'taName',
+          JSON.stringify(response.data.name),
+        );
+      } else if (role === '2') {
+        emailId = JSON.parse(await AsyncStorage.getItem('email'));
+        if (emailId === null) {
+          await AsyncStorage.clear();
+          navigation.replace('FacultyTALogin');
+          return;
+        }
+        response = await axios.get(`http://10.200.6.190:8080/getStudent`, {
+          params: {
+            Id: emailId,
+          },
+        });
+        console.log('Email:', emailId);
+        await AsyncStorage.setItem(
+          'studentName',
           JSON.stringify(response.data.name),
         );
       }
@@ -97,7 +115,7 @@ const FacultyTADashboard = ({route}: FacultyTADashboardProps) => {
       console.log('Response:', response.data);
       await setEmail(emailId);
       await setFacultyData(response.data);
-      if ( role === '1' && response.data.currentCourseList !== null)
+      if (role === '1' && response.data.currentCourseList !== null)
         await setCurrentCourses(response.data.currentCourseList);
     } catch (e) {
       console.log('Error:', e);
@@ -128,6 +146,9 @@ const FacultyTADashboard = ({route}: FacultyTADashboardProps) => {
             size={23}
             color="#2d2d2d"
             style={{marginRight: 15}}
+            onPress={() => {
+              navigation.push('Notifications');
+            }}
           />
           <Icon2
             onPress={() => {
@@ -142,7 +163,7 @@ const FacultyTADashboard = ({route}: FacultyTADashboardProps) => {
       <ScrollView style={{width: '100%'}}>
         <View style={styles.subContainer}>
           <View style={{width: '100%', paddingLeft: 15}}>
-            <Text style={styles.title}>Welcome, {facultyData.name}</Text>
+            <Text style={styles.title}>Welcome, {facultyData ? facultyData.name : "NULL"}</Text>
           </View>
           <View style={styles.courseContainer}>
             {role === '1' ? (
@@ -166,6 +187,7 @@ const FacultyTADashboard = ({route}: FacultyTADashboardProps) => {
                             navigation.push('CourseDetails', {
                               courseId: item.id,
                               courseName: item.name,
+                              numOfStudents: item.numOfStudents,
                             });
                           }}>
                           <Text style={styles.courseContainerItemTextTitle}>

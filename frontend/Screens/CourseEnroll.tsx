@@ -32,11 +32,19 @@ const CourseEnroll = ({route}: CourseEnrollProps) => {
   const [loading, setLoading] = React.useState(false);
   const [TAs, setTAs] = React.useState([]);
   const [role, setRole] = React.useState('2');
+  const [isTAAvalable, setIsTAAvalable] = React.useState(false);
 
   const retrieveData = async () => {
     setLoading(true);
     try {
       const role = JSON.parse(await AsyncStorage.getItem('role'));
+      let taIsAvailable = false;
+      if (role === '0') {
+        taIsAvailable = await JSON.parse(
+          await AsyncStorage.getItem('taIsAvailable'),
+        );
+        await setIsTAAvalable(taIsAvailable);
+      }
       await setRole(role);
       let emailId = '';
       if (role === '0') {
@@ -52,7 +60,7 @@ const CourseEnroll = ({route}: CourseEnrollProps) => {
           Id: courseId,
         },
       });
-      console.log('Response:', response.data.tas);
+      console.log('Response:', response.data.students);
       console.log('Email:', emailId);
       await setCourses(response.data);
       await setTAs(response.data.tas);
@@ -61,6 +69,15 @@ const CourseEnroll = ({route}: CourseEnrollProps) => {
       if (tas !== null) {
         for (let i = 0; i < tas.length; i++) {
           if (tas[i].email === emailId) {
+            alert('You are already enrolled in this course');
+            navigation.pop();
+          }
+        }
+      }
+      //check whether the course is already enrolled
+      if (response.data.students !== null) {
+        for (let i = 0; i < response.data.students.length; i++) {
+          if (response.data.students[i].id === emailId) {
             alert('You are already enrolled in this course');
             navigation.pop();
           }
@@ -124,15 +141,26 @@ const CourseEnroll = ({route}: CourseEnrollProps) => {
         );
       } else {
         console.log(courseId, email);
-        
+
         response = await axios.post(
           `http://10.200.6.190:8080/addCourseToTA?courseId=${courseId}&taId=${email}`,
         );
       }
       console.log('Response:', response.data);
-      if (response.data === 'Successful') {
-        alert('Course enrolled successfully');
+      if (response.data === 'Pass') {
+        alert('Request sent successfully');
         navigation.pop();
+      } else if (response.data === 'Successful') {
+        alert('Course Registred Successfully');
+        navigation.pop();
+      } else if (response.data === 'Fail') {
+        alert('Course enrollment failed');
+        navigation.pop();
+      } else if (response.data === 'Already Enrolled') {
+        alert('You are already enrolled in this course');
+        navigation.pop();
+      } else {
+        alert('Request failed');
       }
     } catch (e) {
       console.log(e);
@@ -207,13 +235,40 @@ const CourseEnroll = ({route}: CourseEnrollProps) => {
                     </Text>
                   )}
                 </View>
-                <TouchableOpacity
-                  onPress={() => {
-                    handleSubmit();
-                  }}
-                  style={styles.submitButton}>
-                  <Text style={{color: '#eaeaea', fontSize: 18}}>Enroll</Text>
-                </TouchableOpacity>
+                {role === '0' && isTAAvalable ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      handleSubmit();
+                    }}
+                    style={styles.submitButton}>
+                    {role === '2' ? (
+                      <Text style={{color: '#eaeaea', fontSize: 18}}>
+                        Enroll
+                      </Text>
+                    ) : (
+                      <Text style={{color: '#eaeaea', fontSize: 18}}>
+                        Request for this course
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                ) : null}
+                {role === '2' ? (
+                  <TouchableOpacity
+                    onPress={() => {
+                      handleSubmit();
+                    }}
+                    style={styles.submitButton}>
+                    {role === '2' ? (
+                      <Text style={{color: '#eaeaea', fontSize: 18}}>
+                        Enroll
+                      </Text>
+                    ) : (
+                      <Text style={{color: '#eaeaea', fontSize: 18}}>
+                        Request for this course
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                ) : null}
               </>
             )}
           </View>

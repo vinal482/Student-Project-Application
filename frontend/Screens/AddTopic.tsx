@@ -34,7 +34,7 @@ const AddTopic = ({route}: AddTopicProps) => {
   const retrieveData = async () => {
     setLoading(true);
     try {
-      const emailId = JSON.parse(await AsyncStorage.getItem('email'));
+      const emailId = JSON.parse(await AsyncStorage.getItem('facultyEmail'));
       console.log('Email:', emailId);
       await setEmail(emailId);
     } catch (e) {
@@ -49,6 +49,12 @@ const AddTopic = ({route}: AddTopicProps) => {
   }, []);
 
   const handleSubmit = async () => {
+    if(topicName === '' || description === '') {
+      alert('Please fill all the fields');
+      return;
+    }
+    console.log('CourseId:', courseId, 'TopicName:', topicName, 'Description:', description);
+    
     setLoading(true);
     try {
       const response = await axios.post(`http://10.200.6.190:8080/addTopic`, {

@@ -41,8 +41,12 @@ const Notifications = ({route}: NotificationsProps) => {
       emailId = await JSON.parse(await AsyncStorage.getItem('facultyEmail'));
     } else if (role === '0') {
       emailId = await JSON.parse(await AsyncStorage.getItem('taEmail'));
-    } else {
+    } else if (role === '2'){
       emailId = await JSON.parse(await AsyncStorage.getItem('email'));
+    } else if(role === '3') {
+      emailId = await JSON.parse(await AsyncStorage.getItem('adminEmail'));
+    } else if(role === '4') {
+      emailId = await JSON.parse(await AsyncStorage.getItem('superAdminEmail'));
     }
     // const email = await JSON.parse(await AsyncStorage.getItem('email'));
     setEmail(emailId);
@@ -118,11 +122,64 @@ const Notifications = ({route}: NotificationsProps) => {
     }
   };
 
+  const handleAcceptRequest = async (
+    notificationId,
+    email,
+    courseId,
+    taEmail,
+  ) => {
+    setLoading(true);
+    try {
+      const response = await axios.put(
+        `http://10.200.6.190:8080/acceptTARequest?notificationId=${notificationId}&email=${email}&courseId=${courseId}&taEmail=${taEmail}`,
+      );
+      console.log('Response:', response.data);
+      if(response.data === 'Accepted') {
+        navigation.replace("Notifications");
+      } else {
+        console.log('Error:', response.data);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRejectRequest = async (
+    notificationId,
+    email,
+    courseId,
+    taEmail,
+  ) => {
+    try {
+      const response = await axios.put(
+        `http://10.200.6.190:8080/rejectTARequest?notificationId=${notificationId}&email=${email}&courseId=${courseId}&taEmail=${taEmail}`,
+      );
+      console.log('Response:', response.data);
+      navigation.replace("Notifications");
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
   return (
     <View style={styles.container}>
       {/* <Text>Notifications</Text> */}
       <View style={styles.navigationBar}>
-        <Text style={styles.title}>Notifications</Text>
+        <TouchableOpacity
+          onPress={() => {
+            navigation.goBack();
+          }}
+          style={{flexDirection: 'row'}}>
+          <Icon
+            name="arrow-left-long"
+            style={{marginRight: 10}}
+            size={24}
+            color="#2d2d2d"
+          />
+          <Text style={styles.title}>Notifications</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.subContainer}>
         <ScrollView style={{width: '100%'}}>
@@ -206,13 +263,47 @@ const Notifications = ({route}: NotificationsProps) => {
                     ) : null}
                     {item.type === 2 ? (
                       <View style={styles.requestButtonsContainer}>
-                        <TouchableOpacity style={styles.requestButtonAccept}>
-                          <Icon name="check" size={18} color="#1E63BB" style={{marginRight: 10}}/>
-                          <Text style={{color: '#1E63BB', fontWeight: "bold", fontSize: 15}}>ACCEPT</Text>
+                        <TouchableOpacity
+                          onPress={() => {
+                            console.log('Accepting request');
+                            handleAcceptRequest(item.id, email, item.courseId, item.senderEmail);
+                          }}
+                          style={styles.requestButtonAccept}>
+                          <Icon
+                            name="check"
+                            size={18}
+                            color="#1E63BB"
+                            style={{marginRight: 10}}
+                          />
+                          <Text
+                            style={{
+                              color: '#1E63BB',
+                              fontWeight: 'bold',
+                              fontSize: 15,
+                            }}>
+                            ACCEPT
+                          </Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={styles.requestButtonReject}>
-                          <Icon name="xmark" size={18} color="#FF3E3E" style={{marginRight: 10}} />
-                          <Text style={{color: '#FF3E3E', fontWeight: "bold", fontSize: 15}}>REJECT</Text>
+                        <TouchableOpacity
+                          onPress={() => {
+                            console.log('Rejecting request');
+                            handleRejectRequest(item.id, email, courseId, item.senderEmail);
+                          }}
+                          style={styles.requestButtonReject}>
+                          <Icon
+                            name="xmark"
+                            size={18}
+                            color="#FF3E3E"
+                            style={{marginRight: 10}}
+                          />
+                          <Text
+                            style={{
+                              color: '#FF3E3E',
+                              fontWeight: 'bold',
+                              fontSize: 15,
+                            }}>
+                            REJECT
+                          </Text>
                         </TouchableOpacity>
                       </View>
                     ) : null}
@@ -304,6 +395,7 @@ const styles = StyleSheet.create({
     width: '100%',
     justifyContent: 'flex-start',
     alignItems: 'center',
+    flexDirection: 'column-reverse',
     paddingVertical: 15,
     // backgroundColor: '#fefefe',
     borderRadius: 8,

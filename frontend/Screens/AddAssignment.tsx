@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Pressable,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {NativeStackNavigationProps} from '@react-navigation/native-stack';
@@ -19,6 +20,7 @@ import Icon from 'react-native-vector-icons/FontAwesome6';
 import Icon2 from 'react-native-vector-icons/FontAwesome';
 import Icon3 from 'react-native-vector-icons/MaterialCommunityIcons';
 import SelectDropdown from 'react-native-select-dropdown';
+import DatePicker from 'react-native-date-picker';
 
 type AddAssignmentProps = NativeStackScreenProps<
   RootStackParamList,
@@ -40,14 +42,19 @@ const AddAssignment = ({route}: AddAssignmentProps) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [email, setEmail] = React.useState('');
+  const [maxMarks, setMaxMarks] = React.useState(0);
   const [loading, setLoading] = React.useState(false);
   const [AssignmentName, setAssignmentName] = React.useState('');
   const [description, setDescription] = React.useState('');
   const [URL, setURL] = React.useState('');
   const [topics, setTopics] = React.useState([]);
   const [topicid, setTopicId] = React.useState('');
+  const [date, setDate] = React.useState(new Date());
+  const [open, setOpen] = React.useState(false);
 
   const retrieveData = async () => {
+    await setTopicId(topicId);
+    console.log('Topic ID:', topicId);
     setLoading(true);
     try {
       const emailId = JSON.parse(await AsyncStorage.getItem('email'));
@@ -80,6 +87,10 @@ const AddAssignment = ({route}: AddAssignmentProps) => {
       alert('Please enter a video name');
       return;
     }
+    if (maxMarks === 0) {
+      alert('Please enter maximum marks');
+      return;
+    }
     if (description === '') {
       alert('Please enter a description');
       return;
@@ -102,6 +113,8 @@ const AddAssignment = ({route}: AddAssignmentProps) => {
         name: AssignmentName,
         description: description,
         url: URL,
+        dueDate: date,
+        maxMarks: maxMarks,
       },
     );
     console.log('Response:', response.data);
@@ -146,6 +159,35 @@ const AddAssignment = ({route}: AddAssignmentProps) => {
     return false;
   };
 
+  const formatDateTime = dateTimeString => {
+    if (!dateTimeString) return null; // Handle empty string
+
+    try {
+      // Parse the date time string using Date object
+      const dateObj = new Date(dateTimeString);
+
+      // Extract components for formatting
+      const day = dateObj.getDate().toString().padStart(2, '0');
+      const month = (dateObj.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed
+      const year = dateObj.getFullYear();
+
+      // Format the time portion
+      const hour = dateObj.getHours();
+      const minute = dateObj.getMinutes().toString().padStart(2, '0');
+
+      // Handle 12-hour clock format and meridiem
+      let formattedHour = hour === 0 ? 12 : hour % 12; // Handle midnight as 12
+      const meridiem = hour >= 12 ? 'pm' : 'am';
+      if (hour == 12) formattedHour = 12;
+      if (formattedHour < 10) formattedHour = '0' + formattedHour;
+      // Return the formatted date time string
+      return `${day}-${month}-${year} ${formattedHour}:${minute} ${meridiem}`;
+    } catch (error) {
+      console.error('Error formatting date time string:', error);
+      return null; // Handle parsing errors
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.navigationBar}>
@@ -167,97 +209,162 @@ const AddAssignment = ({route}: AddAssignmentProps) => {
           <Icon2 name="user-circle" size={23} color="#2d2d2d" />
         </View>
       </View>
-      <View style={styles.subContainer}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>{courseName}</Text>
-        </View>
-        <View style={styles.courseContainer}>
-          <Text style={styles.title}>Add a new assignment</Text>
+      <ScrollView style={{width: '100%'}}>
+        <View style={styles.subContainer}>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>{courseName}</Text>
+          </View>
+          <View style={styles.courseContainer}>
+            <Text style={styles.title}>Add a new assignment</Text>
 
-          <>
-            {topicAvailable === 1 ? (
-              <>
-                <Text style={styles.courseContainerTitle}>Topic Name</Text>
-                <SelectDropdown
-                  data={topics}
-                  onSelect={(selectedItem, index) => {
-                    console.log(selectedItem, index);
-                    setTopicId(selectedItem.id);
-                  }}
-                  renderButton={(selectedItem, isOpened) => {
-                    return (
-                      <View style={styles.dropdownButtonStyle}>
-                        <Text style={styles.dropdownButtonTxtStyle}>
-                          {(selectedItem && selectedItem.name) ||
-                            'Select a topic*'}
-                        </Text>
-                        <Icon3
-                          name={isOpened ? 'chevron-up' : 'chevron-down'}
-                          style={styles.dropdownButtonArrowStyle}
-                          color="#2d2d2d"
-                        />
-                      </View>
-                    );
-                  }}
-                  renderItem={(item, index, isSelected) => {
-                    return (
-                      <View
-                        style={{
-                          ...styles.dropdownItemStyle,
-                          ...(isSelected && {backgroundColor: '#D2D9DF'}),
-                        }}>
-                        <Text style={styles.dropdownItemTxtStyle}>
-                          {item.name}
-                        </Text>
-                      </View>
-                    );
-                  }}
-                  showsVerticalScrollIndicator={true}
-                  dropdownStyle={styles.dropdownMenuStyle}
-                />
-              </>
-            ) : null}
-            <Text style={styles.courseContainerTitle}>Assignment title*</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter Assignment Title"
-              onChangeText={text => setAssignmentName(text)}
-              placeholderTextColor="#3d3d3d"
-            />
-            <Text style={styles.courseContainerTitle}>Description*</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter description"
-              onChangeText={text => setDescription(text)}
-              placeholderTextColor="#3d3d3d"
-              multiline={true}
-              // numberOfLines={4}
-              maxLength={500}
-            />
-            <Text style={styles.courseContainerTitle}>Google drive URL*</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter URL"
-              onChangeText={text => setURL(text)}
-              placeholderTextColor="#3d3d3d"
-              multiline={true}
-            />
-          </>
+            <>
+              {topicAvailable === 1 ? (
+                <>
+                  <Text style={styles.courseContainerTitle}>Topic Name</Text>
+                  <SelectDropdown
+                    data={topics}
+                    onSelect={(selectedItem, index) => {
+                      console.log(selectedItem, index);
+                      setTopicId(selectedItem.id);
+                    }}
+                    renderButton={(selectedItem, isOpened) => {
+                      return (
+                        <View style={styles.dropdownButtonStyle}>
+                          <Text style={styles.dropdownButtonTxtStyle}>
+                            {(selectedItem && selectedItem.name) ||
+                              'Select a topic*'}
+                          </Text>
+                          <Icon3
+                            name={isOpened ? 'chevron-up' : 'chevron-down'}
+                            style={styles.dropdownButtonArrowStyle}
+                            color="#2d2d2d"
+                          />
+                        </View>
+                      );
+                    }}
+                    renderItem={(item, index, isSelected) => {
+                      return (
+                        <View
+                          style={{
+                            ...styles.dropdownItemStyle,
+                            ...(isSelected && {backgroundColor: '#D2D9DF'}),
+                          }}>
+                          <Text style={styles.dropdownItemTxtStyle}>
+                            {item.name}
+                          </Text>
+                        </View>
+                      );
+                    }}
+                    showsVerticalScrollIndicator={true}
+                    dropdownStyle={styles.dropdownMenuStyle}
+                  />
+                </>
+              ) : null}
+              <Text style={styles.courseContainerTitle}>Assignment title*</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter Assignment Title"
+                onChangeText={text => setAssignmentName(text)}
+                placeholderTextColor="#3d3d3d"
+              />
+              <Text style={styles.courseContainerTitle}>Maximum marks*</Text>
+              <TextInput
+                style={styles.input}
+                keyboardType="numeric"
+                placeholder="Enter marks"
+                onChangeText={text => setMaxMarks(text)}
+                placeholderTextColor="#3d3d3d"
+              />
+              <Text style={styles.courseContainerTitle}>Description*</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter description"
+                onChangeText={text => setDescription(text)}
+                placeholderTextColor="#3d3d3d"
+                multiline={true}
+                // numberOfLines={4}
+                maxLength={500}
+              />
+              <Text style={styles.courseContainerTitle}>Google drive URL*</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter URL"
+                onChangeText={text => setURL(text)}
+                placeholderTextColor="#3d3d3d"
+                multiline={true}
+              />
+              <View
+                style={{
+                  width: '100%',
+                  // padding: 10,
+                  // paddingHorizontal: 15,
+                  // marginLeft: 10,
+                  // marginBottom: 15,
+                  flexDirection: 'row',
+                  justifyContent: 'flex-start',
+                  alignItems: 'center',
+                }}>
+                <Text style={styles.courseContainerTitle}>Due date*</Text>
+                <Pressable
+                  style={[
+                    styles.submitButton,
+                    {
+                      borderColor: '#2d2d2d',
+                      borderWidth: 1,
+                      backgroundColor: 'transparent',
+                      marginLeft: 10,
+                      paddingHorizontal: 15,
+                      borderRadius: 8,
+                    },
+                  ]}
+                  onPress={() => setOpen(true)}>
+                  <Text style={{color: '#2d2d2d'}}>Set due time</Text>
+                </Pressable>
+              </View>
+              <Pressable
+                style={styles.input}
+                onPress={() => {
+                  setOpen(true);
+                  console.log(date.toString());
+                }}>
+                <Text style={{color: '#2d2d2d'}}>
+                  {formatDateTime(date.toString())}
+                </Text>
+              </Pressable>
+            </>
+          </View>
+          <DatePicker
+            modal
+            title="Due date"
+            open={open}
+            date={date}
+            minuteInterval={15}
+            minimumDate={new Date()}
+            onConfirm={date => {
+              setOpen(false);
+              setDate(date);
+            }}
+            onCancel={() => {
+              setOpen(false);
+            }}
+            is24hourSource="locale"
+          />
+          <Pressable
+            style={styles.submitButton}
+            onPress={() => {
+              handleSubmit();
+            }}>
+            {loading ? (
+              <ActivityIndicator size="large" color="#eaeaea" />
+            ) : (
+              <Text
+                style={{color: '#eaeaea', fontSize: 16, fontWeight: 'bold'}}>
+                Submit
+              </Text>
+            )}
+          </Pressable>
         </View>
-        <Pressable
-          style={styles.submitButton}
-          onPress={() => {
-            handleSubmit();
-          }}>
-          {loading ? (
-            <ActivityIndicator size="large" color="#eaeaea" />
-          ) : (
-            <Text style={{color: '#eaeaea', fontSize: 16, fontWeight: 'bold'}}>
-              Submit
-            </Text>
-          )}
-        </Pressable>
-      </View>
+      </ScrollView>
     </View>
   );
 };

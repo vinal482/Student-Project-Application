@@ -21,14 +21,17 @@ import {RadioButton} from 'react-native-paper';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import {Pressable} from 'react-native';
 
-type ExploreCoursesProps = NativeStackScreenProps<
+type ListCourseBySemesterAndInstituteProps = NativeStackScreenProps<
   RootStackParamList,
-  'ExploreCourses'
+  'ListCourseBySemesterAndInstitute'
 >;
 
-const ExploreCourses = ({route}: ExploreCoursesProps) => {
+const ListCourseBySemesterAndInstitute = ({route}: ListCourseBySemesterAndInstituteProps) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const {institute, semester} = route.params;
+    console.log('Institute:', institute, 'Semester:', semester);
+    
   const [email, setEmail] = React.useState('');
   const [courses, setCourses] = React.useState([]);
   const [loading, setLoading] = React.useState(false);
@@ -37,19 +40,13 @@ const ExploreCourses = ({route}: ExploreCoursesProps) => {
   const retrieveData = async () => {
     setLoading(true);
     try {
-      const role = JSON.parse(await AsyncStorage.getItem('role'));
-      await setRole(role);
-      let emailId = '';
-      if (role === '0') {
-        emailId = JSON.parse(await AsyncStorage.getItem('taEmail'));
-      } else {
-        emailId = JSON.parse(await AsyncStorage.getItem('email'));
-      }
-      // const emailId = JSON.parse(await AsyncStorage.getItem('email'));
-      await setEmail(emailId);
-      const response = await axios.get('http://10.200.6.190:8080/courses');
+      const response = await axios.get(`http://10.200.6.190:8080/getCoursesBySemester`, {
+        params: {
+          instituteName: institute,
+          semester: semester,
+        },
+      });
       console.log('Response:', response.data);
-      console.log('Email:', emailId);
       await setCourses(response.data);
     } catch (e) {
       console.log('Error:', e);
@@ -62,37 +59,11 @@ const ExploreCourses = ({route}: ExploreCoursesProps) => {
     retrieveData();
   }, []);
 
-  const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.put(
-        'http://10.200.6.190:8080/updateStudentByEmail',
-        {
-          email: email,
-          firstName: firstName,
-          lastName: lastName,
-          mobileNumber: mobile,
-          program: program,
-          instituteName: institute,
-          dateOfBirth: dob,
-          gander: gander,
-        },
-      );
-      console.log('Response:', response.data);
-    } catch (e) {
-      console.log('Error:', e);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const CourseItem = ({item}) => {
     return (
       <TouchableOpacity
-        style={[styles.profileDetailsCard, styles.elevation]}
-        onPress={() => {
-          navigation.push('CourseEnroll', {courseId: item.id});
-        }}>
+        style={[styles.profileDetailsCard, styles.elevation]}>
         <Text
           style={[
             styles.detailValueItem,
@@ -150,42 +121,6 @@ const ExploreCourses = ({route}: ExploreCoursesProps) => {
           </Text>
         </View>
       </Animated.View>
-      <View style={[styles.bottomNavigationBar, styles.elevation]}>
-        <Pressable
-          onPress={() => {
-            role === '2'
-              ? navigation.replace('StudentDashboard')
-              : navigation.replace('FacultyTADashboard');
-          }}
-          style={{
-            flexDirection: 'column',
-            alignItems: 'center',
-            width: '30%',
-          }}>
-          <Ionicons name="grid-outline" size={28} color="#6d6d6d" />
-          <Text style={{color: '#6d6d6d', fontSize: 16}}>Dashboard</Text>
-        </Pressable>
-        <Pressable
-          style={{
-            flexDirection: 'column',
-            alignItems: 'center',
-            width: '30%',
-            fontWeight: 'bold',
-          }}>
-          <Ionicons name="compass-outline" size={28} color="#1d1d1d" />
-          <Text style={{color: '#1d1d1d', fontSize: 16, fontWeight: 'bold'}}>
-            Explore
-          </Text>
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            navigation.replace('StudentProfile');
-          }}
-          style={{flexDirection: 'column', alignItems: 'center', width: '30%'}}>
-          <Ionicons name="person-outline" size={28} color="#6d6d6d" />
-          <Text style={{color: '#6d6d6d', fontSize: 16}}>Profile</Text>
-        </Pressable>
-      </View>
       <View style={styles.container}>
         <ScrollView
           style={{flex: 1, width: '100%'}}
@@ -331,4 +266,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ExploreCourses;
+export default ListCourseBySemesterAndInstitute;

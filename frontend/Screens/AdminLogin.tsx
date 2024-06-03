@@ -15,12 +15,9 @@ import {RootStackParamList} from '../App';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type FacultyTALoginProps = NativeStackScreenProps<
-  RootStackParamList,
-  'FacultyTALogin'
->;
+type AdminLoginProps = NativeStackScreenProps<RootStackParamList, 'AdminLogin'>;
 
-const FacultyTALogin = ({route}: FacultyTALoginProps) => {
+const AdminLogin = ({route}: AdminLoginProps) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [email, setEmail] = React.useState('');
@@ -28,7 +25,7 @@ const FacultyTALogin = ({route}: FacultyTALoginProps) => {
   const [password, setPassword] = React.useState('');
   const [passwordError, setPasswordError] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
-  const [role, setRole] = React.useState('2');
+  const [role, setRole] = React.useState('3');
 
   const handleSubmit = async () => {
     if (email === '') {
@@ -47,24 +44,26 @@ const FacultyTALogin = ({route}: FacultyTALoginProps) => {
     console.log('Email:', email);
     console.log('Password:', password);
     let response = {};
-    if (role === '1') {
-      await AsyncStorage.setItem('facultyEmail', await JSON.stringify(email));
-    } else if (role === '0') {
-      await AsyncStorage.setItem('taEmail', await JSON.stringify(email));
-      response = await axios.post(`http://10.200.6.190:8080/TAlogin`, {
-        email: email,
-        password: password,
-      });
-    } else {
-      await AsyncStorage.setItem('email', await JSON.stringify(email));
-      // response = await axios.get(`http://10.200.6.190:8080/
+    if (role === '3') {
+      await AsyncStorage.setItem('adminEmail', await JSON.stringify(email));
+      response = await axios.post(
+        `http://10.200.6.190:8080/loginInstituteAdmin`,
+        {email: email, password: password},
+      );
+    } else if (role === '4') {
+      await AsyncStorage.setItem(
+        'superAdminEmail',
+        await JSON.stringify(email),
+      );
+      response = await axios.post(
+        `http://10.200.6.190:8080/loginSuperAdmin`,
+        {email: email, password: password},
+      );
     }
 
-    if (
-      role === '2' &&
-      (response.data === 'Incorrect Password' ||
-        response.data === 'User not found')
-    ) {
+    console.log('Response:', response.data);
+
+    if (response.data === 'Fail' || response.data === 'Invalid Email') {
       await AsyncStorage.clear();
       alert(response.data);
       setLoading(false);
@@ -74,20 +73,20 @@ const FacultyTALogin = ({route}: FacultyTALoginProps) => {
     // 1 for Faculty
     // 0 for TA
     await AsyncStorage.setItem('role', await JSON.stringify(role));
-    if (role !== '2') {
-      navigation.replace('FacultyTADashboard');
+    if (role === '3') {
+      navigation.replace('InstituteAdminDashboard');
     } else {
-      navigation.replace('StudentDashboard');
+      navigation.replace('SuperAdminDashboard');
     }
   };
 
   const retriveData = async () => {
     let temp = JSON.parse(await AsyncStorage.getItem('role'));
     if (temp !== null) {
-      if (temp !== '2') {
-        navigation.replace('FacultyTADashboard');
+      if (temp === '3') {
+        navigation.replace('InstituteAdminDashboard');
       } else {
-        navigation.replace('StudentDashboard');
+        navigation.replace('SuperAdminDashboard');
       }
     }
   };
@@ -100,33 +99,23 @@ const FacultyTALogin = ({route}: FacultyTALoginProps) => {
     <View style={styles.container}>
       <View style={styles.roleChoice}>
         <Pressable
-          style={role !== '2' ? styles.choice : styles.activeChoice}
+          style={role !== '3' ? styles.choice : styles.activeChoice}
           onPress={() => {
-            setRole('2');
+            setRole('3');
           }}>
           <Text
-            style={role !== '2' ? styles.choiceText : styles.activeChoiceText}>
-            Student
+            style={role !== '3' ? styles.choiceText : styles.activeChoiceText}>
+            Admin
           </Text>
         </Pressable>
         <Pressable
-          style={role === '1' ? styles.activeChoice : styles.choice}
+          style={role !== '4' ? styles.choice : styles.activeChoice}
           onPress={() => {
-            setRole('1');
+            setRole('4');
           }}>
           <Text
-            style={role === '1' ? styles.activeChoiceText : styles.choiceText}>
-            Faculty
-          </Text>
-        </Pressable>
-        <Pressable
-          style={role !== '0' ? styles.choice : styles.activeChoice}
-          onPress={() => {
-            setRole('0');
-          }}>
-          <Text
-            style={role !== '0' ? styles.choiceText : styles.activeChoiceText}>
-            TA
+            style={role !== '4' ? styles.choiceText : styles.activeChoiceText}>
+            Super Admin
           </Text>
         </Pressable>
       </View>
@@ -164,24 +153,6 @@ const FacultyTALogin = ({route}: FacultyTALoginProps) => {
           Login
         </Text>
       </TouchableOpacity>
-      {role !== '2' ? (
-        <Text style={[styles.choiceText, {fontWeight: 'semibold'}]}>
-          Forgot password? Contact to your institute admin!
-        </Text>
-      ) : (
-        <Text style={{color: '#3d3d3d', fontSize: 20}}>
-          {' '}
-          Don't have an account?{' '}
-          <TouchableOpacity
-            onPress={() => {
-              navigation.replace('CreateAccount');
-            }}>
-            <Text style={{color: '#1E63BB', fontWeight: 'bold', fontSize: 18}}>
-              Sign up
-            </Text>
-          </TouchableOpacity>
-        </Text>
-      )}
     </View>
   );
 };
@@ -230,14 +201,14 @@ const styles = StyleSheet.create({
   choice: {
     padding: 10,
     margin: 5,
-    width: 100,
+    width: 150,
     justifyContent: 'center',
     alignItems: 'center',
   },
   activeChoice: {
     padding: 10,
     margin: 5,
-    width: 100,
+    width: 150,
     justifyContent: 'center',
     alignItems: 'center',
     alignItems: 'center',
@@ -257,4 +228,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FacultyTALogin;
+export default AdminLogin;

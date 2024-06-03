@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Pressable,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {NativeStackNavigationProps} from '@react-navigation/native-stack';
@@ -16,40 +17,59 @@ import {RootStackParamList} from '../App';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome6';
-import Icon2 from 'react-native-vector-icons/FontAwesome';
 
-type CourseDetailsEditOrViewProps = NativeStackScreenProps<
+type CreateFacultyProps = NativeStackScreenProps<
   RootStackParamList,
-  'CourseDetailsEditOrView'
+  'CreateFaculty'
 >;
 
-const CourseDetailsEditOrView = ({route}: CourseDetailsEditOrViewProps) => {
-  const {courseId, courseName} = route.params;
+const CreateFaculty = ({route}: CreateFacultyProps) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [email, setEmail] = React.useState('');
   const [loading, setLoading] = React.useState(false);
-  const [courseData, setCourseData] = React.useState({});
-  const [isEdit, setIsEdit] = React.useState(false);
-  const [description, setDescription] = React.useState('');
-  const [coursename, setCourseName] = React.useState('');
+  const [facultyData, setFacultyData] = React.useState({});
+  const [facultyName, setFacultyName] = React.useState('');
+  const [currentCourses, setCurrentCourses] = React.useState([]);
+  const [facultyEmailList, setFacultyEmailList] = React.useState([]);
+
+  const [courseName, setCourseName] = React.useState('');
+  const [courseDescription, setCourseDescription] = React.useState('');
   const [credits, setCredits] = React.useState('');
+  const [domains, setDomains] = React.useState([]);
+  const [courseNameError, setCourseNameError] = React.useState(false);
+  const [newEmail, setNewEmail] = React.useState('');
 
   const retrieveData = async () => {
     setLoading(true);
     try {
-      const emailId = JSON.parse(await AsyncStorage.getItem('email'));
+      const emailId = JSON.parse(await AsyncStorage.getItem('adminEmail'));
+      await setEmail(emailId);
+      await setFacultyName(facultyName);
       console.log('Email:', emailId);
-      const response = await axios.get(`http://10.200.6.190:8080/getCourse`, {
-        params: {
-          Id: courseId,
-        },
-      });
+      //   const response = await axios.get(`http://10.200.6.190:8080/getFaculty`, {
+      //     params: {
+      //       Id: emailId,
+      //     },
+      //   });
+      //   console.log('Response:', response.data);
+      //   await setEmail(emailId);
+      //   await setFacultyData(response.data);
+      //   if (response.data.currentCourses !== null)
+      //     await setCurrentCourses(response.data.currentCourseList);
+      const response = await axios.get(
+        `http://10.200.6.190:8080/getFacultiesNameForInstituteAdmin?email=${emailId}`,
+      );
       console.log('Response:', response.data);
-      await setCourseData(response.data);
-      await setDescription(response.data.description);
-      await setCredits(response.data.credits);
-      await setCourseName(courseName);
+      // let temp = [];
+      // for (let i = 0; i < response.data.length; i++) {
+      //   let course = response.data[i];
+      //   // remove space from the course name amd convert all characted to small alphabet
+      //   course = course.replace(/\s/g, '');
+      //   course = course.toLowerCase();
+      //   temp.push(course);
+      // }
+      await setFacultyEmailList(response.data);
     } catch (e) {
       console.log('Error:', e);
     } finally {
@@ -62,23 +82,51 @@ const CourseDetailsEditOrView = ({route}: CourseDetailsEditOrViewProps) => {
   }, []);
 
   const handleSubmit = async () => {
+    // remove white space from the last work of course name
+    let temp = courseName.trim();
+    console.log('Course Name:', temp);
+    if (facultyName === '' || newEmail === '') {
+      alert('Please fill all the fields');
+      return;
+    } else if (courseNameError) {
+      alert('Faculty email already exists');
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await axios.put(
-        `http://10.200.6.190:8080/editCourseDetails`,
+      const response = await axios.post(
+        `http://10.200.6.190:8080/addFacultyByAdmin?email=${email}`,
         {
-          id: courseId,
-          name: coursename,
-          description: description,
-          credits: credits,
+          name: facultyName,
+          email: newEmail,
         },
       );
       console.log('Response:', response.data);
+      if (response.data === 'Successful') {
+        alert('Faculty added successfully');
+        navigation.pop(), navigation.replace('InstituteAdminDashboard');
+      }
     } catch (e) {
-      console.log('Error:', e);
+      console.log(e);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEmail = async (text: string) => {
+    // if the prefix or the entire coursename is same as the courseList then show the alert
+    let temp = text.replace(/\s/g, '');
+    temp = temp.toLowerCase();
+    for (let i = 0; i < facultyEmailList.length; i++) {
+      if (facultyEmailList[i] === temp) {
+        await setCourseNameError(true);
+        break;
+      } else {
+        await setCourseNameError(false);
+      }
+    }
+    await setNewEmail(text);
   };
 
   return (
@@ -87,87 +135,43 @@ const CourseDetailsEditOrView = ({route}: CourseDetailsEditOrViewProps) => {
         <View style={{flexDirection: 'row', alignItems: 'center'}}>
           <Icon
             name="arrow-left-long"
-            size={25}
+            size={23}
             color="#2d2d2d"
             style={{marginRight: 10}}
           />
-          <Text style={styles.navigationText}>Edit Course details</Text>
+          <Text style={styles.navigationText}>Add Faculty</Text>
         </View>
         <View style={styles.navigationIcons}>
-          <Icon
-            name="bell"
-            size={23}
-            color="#2d2d2d"
-            style={{marginRight: 15}}
-          />
-          <Icon2 name="user-circle" size={23} color="#2d2d2d" />
+          
         </View>
       </View>
-      <View style={styles.subContainer}>
-        <View style={styles.header}>
-          {loading ? (
-            <ActivityIndicator size="large" color="#2d2d2d" />
-          ) : (
-            <Text style={styles.headerTitle}>{courseName}</Text>
-          )}
-        </View>
-        <View style={styles.courseContainer}>
-          <Pressable
-            style={styles.editButton}
-            onPress={() => setIsEdit(!isEdit)}>
-            {isEdit ? <Text>Cancle edit</Text> : <Text>Edit details</Text>}
-          </Pressable>
-          {loading ? (
-            <ActivityIndicator size="large" color="#2d2d2d" />
-          ) : (
-            <>
-              <Text style={styles.courseContainerTitle}>Name</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter Course Name"
-                onChangeText={text => setCourseName(text)}
-                placeholderTextColor="#3d3d3d"
-                defaultValue={coursename}
-                editable={isEdit}
-              />
-              <Text style={styles.courseContainerTitle}>Description</Text>
-              <TextInput
-                style={[styles.input, {marginBottom: 0}]}
-                placeholder="Enter Course Description"
-                onChangeText={text => setCourseDescription(text)}
-                placeholderTextColor="#4d4d4d"
-                multiline={true}
-                maxLength={1000}
-                defaultValue={description}
-                editable={isEdit}
-              />
-              <Text
-                style={[
-                  styles.courseContainerTitle,
-                  {
-                    color: '#5d5d5d',
-                    fontWeight: 'regular',
-                    marginBottom: 10,
-                    fontSize: 12,
-                    marginLeft: 15,
-                  },
-                ]}>
-                * Limit 1000 characters{' '}
+      <ScrollView style={{width: '100%'}}>
+        <View style={styles.subContainer}>
+          <View style={styles.courseContainer}>
+            <Text style={styles.courseContainerTitle}>Name *</Text>
+            <TextInput
+              style={[styles.input, {marginBottom: 0}]}
+              placeholder="Enter Faculty Name"
+              onChangeText={text => setFacultyName(text)}
+              placeholderTextColor="#4d4d4d"
+            />
+            <Text style={{color: 'red', fontSize: 14, marginBottom: 5}}></Text>
+            <Text style={styles.courseContainerTitle}>Email *</Text>
+            <TextInput
+              style={[styles.input, {marginBottom: 0}]}
+              placeholder="Enter Faculty Email"
+              onChangeText={text => handleEmail(text)}
+              placeholderTextColor="#4d4d4d"
+            />
+            {courseNameError ? (
+              <Text style={{color: 'red', fontSize: 14, marginBottom: 5}}>
+                Email already exists
               </Text>
-              <Text style={styles.courseContainerTitle}>Credits</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter Credits"
-                onChangeText={text => setCredits(text)}
-                placeholderTextColor="#4d4d4d"
-                keyboardType="numeric"
-                defaultValue={credits.toString()}
-                editable={isEdit}
-              />
-            </>
-          )}
-        </View>
-        {isEdit ? (
+            ) : (
+              <Text
+                style={{color: 'red', fontSize: 14, marginBottom: 5}}></Text>
+            )}
+          </View>
           <Pressable
             style={styles.submitButton}
             onPress={() => {
@@ -182,8 +186,8 @@ const CourseDetailsEditOrView = ({route}: CourseDetailsEditOrViewProps) => {
               </Text>
             )}
           </Pressable>
-        ) : null}
-      </View>
+        </View>
+      </ScrollView>
     </View>
   );
 };
@@ -196,33 +200,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#eaeaea',
     color: '#2d2d2d',
   },
-  header: {
-    width: '90%',
-    // height: 50,
-    paddingVertical: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fafafa',
-    borderRadius: 8,
-    borderColor: '#1E63BB',
-    borderLeftWidth: 2,
-    borderRightWidth: 2,
-  },
-  editButton: {
-    backgroundColor: '#2d2d2d',
-    color: '#eaeaea',
-    padding: 12,
-    paddingHorizontal: 30,
-    borderRadius: 50,
-    marginBottom: 20,
-    marginTop: 20,
-  },
-  headerTitle: {
-    fontSize: 20,
-    color: '#1E63BB',
-    fontWeight: 'bold',
-  },
   navigationBar: {
     width: '100%',
     paddingVertical: 20,
@@ -234,7 +211,7 @@ const styles = StyleSheet.create({
   },
   navigationText: {
     color: '#2d2d2d',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   navigationIcons: {
@@ -249,7 +226,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   courseContainer: {
-    width: '87%',
+    width: '85%',
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
     paddingVertical: 15,
@@ -258,20 +235,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   courseContainerTitle: {
-    color: '#6d6d6d',
-    fontSize: 18,
+    color: '#5d5d5d',
+    fontSize: 17,
     fontWeight: 'bold',
   },
   courseContainerItem: {
-    width: '97%',
+    width: '100%',
     padding: 15,
     backgroundColor: '#fefefe',
     borderRadius: 8,
     marginBottom: 10,
-    borderColor: '#2d2d2d',
+    borderColor: '#9d9d9d',
     borderWidth: 1,
     justifyContent: 'center',
-    marginLeft: 10,
   },
   courseContainerItemIcon: {
     position: 'absolute',
@@ -279,7 +255,7 @@ const styles = StyleSheet.create({
   },
   courseContainerItemTextTitle: {
     color: '#2d2d2d',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
   },
   courseContainerItemText: {
@@ -303,15 +279,15 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   input: {
-    width: '90%',
-    padding: 10,
-    paddingHorizontal: 15,
-    marginLeft: 10,
+    width: '95%',
+    padding: 8,
+    paddingHorizontal: 12,
+    marginTop: 1,
     borderWidth: 1,
-    color: '#1d1d1d',
+    color: '#2d2d2d',
     borderColor: '#5d5d5d',
     borderRadius: 8,
-    marginBottom: 20,
+    marginBottom: 15,
   },
   submitButton: {
     backgroundColor: '#2d2d2d',
@@ -361,4 +337,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CourseDetailsEditOrView;
+export default CreateFaculty;

@@ -69,9 +69,10 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
       await setMaterails(response.data.materials);
       await setAssignments(response.data.assignments);
       let temp = new Object();
-      for (let i = 0; i < response.data.videos.length; i++) {
-        temp[response.data.videos[i].id] = false;
-      }
+      if (response.data.videos)
+        for (let i = 0; i < response.data.videos.length; i++) {
+          temp[response.data.videos[i].id] = false;
+        }
       console.log('Temp:', temp);
       await setVideoPlayerContainerVisibleArray(temp);
     } catch (e) {
@@ -136,6 +137,26 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
   const togglePlaying = React.useCallback(() => {
     setPlaying(prev => !prev);
   }, []);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return null; // Handle empty string
+  
+    try {
+      // Parse the date string using Date object
+      const dateObj = new Date(dateString);
+  
+      // Extract components for formatting
+      const day = dateObj.getDate().toString().padStart(2, '0');
+      const month = (dateObj.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed
+      const year = dateObj.getFullYear();
+  
+      // Return the formatted date string
+      return `${day}-${month}-${year}`;
+    } catch (error) {
+      console.error('Error formatting date string:', error);
+      return null; // Handle parsing errors
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -274,12 +295,24 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
                       fontSize: 16,
                       fontWeight: 'bold',
                       marginTop: 10,
+                      marginBottom: 10,
                     }}>
                     No videos available
                   </Text>
                 )}
               </>
             )}
+            {/* horizontal rule */}
+            <View
+              style={{
+                width: '100%',
+                borderBottomWidth: 1,
+                borderColor: '#9d9d9d',
+                marginLeft: 0,
+                marginTop: 5,
+                marginBottom: 15,
+              }}
+            />
             <View
               style={{
                 flexDirection: 'row',
@@ -349,13 +382,23 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
                       fontSize: 16,
                       fontWeight: 'bold',
                       marginTop: 10,
+                      marginBottom: 10,
                     }}>
                     No materials available
                   </Text>
                 )}
               </>
             )}
-
+            <View
+              style={{
+                width: '100%',
+                borderBottomWidth: 1,
+                borderColor: '#9d9d9d',
+                marginLeft: 0,
+                marginTop: 5,
+                marginBottom: 15,
+              }}
+            />
             <View
               style={{
                 flexDirection: 'row',
@@ -401,7 +444,25 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
                   return (
                     <Pressable
                       onPress={() => {
-                        Linking.openURL(assignment.url);
+                        role === '2'
+                          ? navigation.push('AssignmentSubmission', {
+                              assignmentId: assignment.id,
+                              assignmentName: assignment.name,
+                              assignmentDescription: assignment.description,
+                              assignmentDueDate: assignment.dueDate,
+                              url: assignment.url,
+                              createdDate: formatDate(assignment.createdDate) + "  " + assignment.createdTime,
+                              maxMarks: assignment.maxMarks,
+                            })
+                          : navigation.push('AssignmentSubmissionsFaculty', {
+                              assignmentId: assignment.id,
+                              assignmentName: assignment.name,
+                              assignmentDescription: assignment.description,
+                              assignmentDueDate: assignment.dueDate,
+                              url: assignment.url,
+                              createdDate: formatDate(assignment.createdDate) + "  " + assignment.createdTime,
+                              maxMarks: assignment.maxMarks,
+                            });
                       }}
                       style={styles.courseContainerItem}
                       key={assignment.id}>

@@ -19,11 +19,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome6';
 import Icon2 from 'react-native-vector-icons/FontAwesome';
 
-type ViewTopicsProps = NativeStackScreenProps<RootStackParamList, 'ViewTopics'>;
+type ListOfStudentsProps = NativeStackScreenProps<
+  RootStackParamList,
+  'ListOfStudents'
+>;
 
-const ViewTopics = ({route}: ViewTopicsProps) => {
-  const {courseId, courseName, facultyEmail} = route.params;
-  console.log('Course ID:', courseId, facultyEmail);
+const ListOfStudents = ({route}: ListOfStudentsProps) => {
+  const {courseId, courseName} = route.params;
+  console.log('Course ID:', courseId);
 
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -34,39 +37,35 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
   const [topicName, setTopicName] = React.useState('');
   const [description, setDescription] = React.useState('');
   const [topics, setTopics] = React.useState([]);
-  const [role, setRole] = React.useState('');
-  const [grades, setGrades] = React.useState(0);
+  const [numOfStudents, setNumOfStudents] = React.useState(0);
 
   const retrieveData = async () => {
     setLoading(true);
     try {
-      const role = await JSON.parse(await AsyncStorage.getItem('role'));
-      let emailId = '';
-      let res = null;
-      if (role === '1')
-        emailId = JSON.parse(await AsyncStorage.getItem('facultyEmail'));
-      else if (role === '2') {
-        emailId = await JSON.parse(await AsyncStorage.getItem('email'));
-        // res = await axios.get(`http://10.200.6.190:8080/getResultsByStudent`, {
-        //   params: {
-        //     courseId: courseId,
-        //     studentEmail: emailId,
-        //   },
-        // });
-        // console.log('Results:', res.data);
-        // await setGrades(res.data.grades);
-      } else if (role === '0')
-        emailId = JSON.parse(await AsyncStorage.getItem('taEmail'));
+      const emailId = JSON.parse(await AsyncStorage.getItem('facultyEmail'));
       console.log('Email:', emailId);
-      const response = await axios.get(`http://10.200.6.190:8080/getTopics`, {
+      const response = await axios.get(`http://10.200.6.190:8080/getCourse`, {
         params: {
           Id: courseId,
         },
       });
       console.log('Response:', response.data);
-      await setTopics(response.data);
+      let data = response.data.results;
+      let students = response.data.students;
+      for (let i = 0; i < students.length; i++) {
+        let student = students[i];
+        for (let j = 0; j < data.length; j++) {
+          let topic = data[j];
+          if (topic.email === student.id) {
+            student.grades = topic.grades;
+          }
+        }
+      }
+      await setTopics(students);
+      console.log('Topics:', students);
+      
       await setEmail(emailId);
-      await setRole(role);
+      await setNumOfStudents(response.data.numOfStudents);
     } catch (e) {
       console.log('Error:', e);
     } finally {
@@ -105,83 +104,112 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
             <Text style={styles.headerTitle}>{courseName}</Text>
           </View>
           <View style={styles.courseContainer}>
-            {grades ? null : (
-              <Pressable
-                onPress={() => {
-                  navigation.push('Tokens', {
-                    courseId: courseId,
-                    courseName: courseName,
-                    studentEmail: email,
-                    facultyEmail: facultyEmail,
-                  });
-                }}
-                style={[
-                  styles.courseContainerItem,
-                  styles.shadowProp,
-                  {paddingVertical: 12},
-                ]}>
-                <Text style={styles.courseContainerItemTextTitle}>Tokens</Text>
-                <Icon
-                  name="caret-right"
-                  size={25}
-                  color="#2d2d2d"
-                  style={styles.courseContainerItemIcon}
-                />
-              </Pressable>
-            )}
-            {!loading && grades ? (
-              <>
-                <Text
-                  style={[
-                    styles.title,
-                    {
-                      marginBottom: 5,
-                    },
-                  ]}>
-                  Result
-                </Text>
-                <Text
-                  style={[
-                    styles.courseContainerItemTextTitle,
-                    {
-                      marginBottom: 10,
-                    },
-                  ]}>
-                  Grades: {grades}
-                </Text>
-              </>
-            ) : null}
-            <Text style={styles.title}>Topics</Text>
+            <Text style={styles.title}>List of Students ({numOfStudents})</Text>
             {loading ? (
               <ActivityIndicator size="large" color="#2d2d2d" />
             ) : (
-              <View style={{flexDirection: 'column-reverse', width: '100%'}}>
+              <View style={{flexDirection: 'column', width: '100%'}}>
                 {topics ? (
                   <>
                     {topics.map((topic, index) => {
+                      if(topic.grades) {
+                        return;
+                      }
                       return (
                         <Pressable
-                          onPress={() => {
-                            navigation.navigate('Topic', {
-                              courseId: courseId,
-                              courseName: courseName,
-                              topicId: topic.id,
-                              topicName: topic.name,
-                              topicDescription: topic.description,
-                              topicStartedDate: topic.createdDate,
-                            });
-                          }}
                           style={[
                             styles.courseContainerItem,
                             styles.shadowProp,
                           ]}
+                          onPress={() => {
+                            navigation.navigate('GradeSubmissionPerStudent', {
+                              studentId: topic.id,
+                              studentName: topic.name,
+                              courseId: courseId,
+                              courseName: courseName,
+                            });
+                          }}
                           key={index}>
                           <Text style={styles.courseContainerItemTextTitle}>
                             {topic.name}
                           </Text>
                           <Text style={styles.courseContainerItemText}>
-                            {topic.description}
+                            {topic.id}
                           </Text>
+                          {
+                            topic.grades ? (
+                              <Text style={[styles.courseContainerItemText, {
+                                color: 'green',
+                                fontWeight: 'bold',
+                              }]}>Evaluated</Text>
+                            ) : (
+                              <Text style={[styles.courseContainerItemText, {
+                                color: 'orange',
+                                fontWeight: 'bold',
+                              }]}>Not Evaluated</Text>
+                            )
+                          }
+                          {topic.grades ? (
+                            <Text style={[styles.courseContainerItemText, {
+                              fontWeight: 'bold',
+                            }]}>
+                              Grades: {topic.grades}
+                            </Text>
+                          ) : null}
+                          <Icon
+                            name="caret-right"
+                            size={25}
+                            color="#2d2d2d"
+                            style={styles.courseContainerItemIcon}
+                          />
+                        </Pressable>
+                      );
+                    })}
+                    {topics.map((topic, index) => {
+                      if(!topic.grades) {
+                        return;
+                      }
+                      return (
+                        <Pressable
+                          style={[
+                            styles.courseContainerItem,
+                            styles.shadowProp,
+                          ]}
+                          onPress={() => {
+                            navigation.navigate('GradeSubmissionPerStudent', {
+                              studentId: topic.id,
+                              studentName: topic.name,
+                              courseId: courseId,
+                              courseName: courseName,
+                            });
+                          }}
+                          key={index}>
+                          <Text style={styles.courseContainerItemTextTitle}>
+                            {topic.name}
+                          </Text>
+                          <Text style={styles.courseContainerItemText}>
+                            {topic.id}
+                          </Text>
+                          {
+                            topic.grades ? (
+                              <Text style={[styles.courseContainerItemText, {
+                                color: 'green',
+                                fontWeight: 'bold',
+                              }]}>Evaluated</Text>
+                            ) : (
+                              <Text style={[styles.courseContainerItemText, {
+                                color: 'orange',
+                                fontWeight: 'bold',
+                              }]}>Not Evaluated</Text>
+                            )
+                          }
+                          {topic.grades ? (
+                            <Text style={[styles.courseContainerItemText, {
+                              fontWeight: 'bold',
+                            }]}>
+                              Grades: {topic.grades}
+                            </Text>
+                          ) : null}
                           <Icon
                             name="caret-right"
                             size={25}
@@ -392,4 +420,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ViewTopics;
+export default ListOfStudents;

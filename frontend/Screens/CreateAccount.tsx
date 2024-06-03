@@ -91,7 +91,8 @@ const CreateAccount = ({route}: CreateAccountProps) => {
       });
       console.log('Response:', response.data);
       await AsyncStorage.setItem('email', JSON.stringify(email));
-      navigation.replace('StudentProfile');
+      await AsyncStorage.setItem('role', JSON.stringify('2'));
+      navigation.replace('FacultyTADashboard');
     } catch (e) {
       console.log('Error:', e);
     } finally {

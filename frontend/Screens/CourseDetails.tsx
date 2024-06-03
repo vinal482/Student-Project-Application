@@ -8,6 +8,9 @@ import {
   TouchableOpacity,
   Pressable,
   ActivityIndicator,
+  ScrollView,
+  Modal,
+  Alert,
 } from 'react-native';
 import {NativeStackScreenProps} from '@react-navigation/native-stack';
 import {NativeStackNavigationProps} from '@react-navigation/native-stack';
@@ -25,12 +28,15 @@ type CourseDetailsProps = NativeStackScreenProps<
 
 const CourseDetails = ({route}: CourseDetailsProps) => {
   const {courseId, courseName} = route.params;
+  const [modalVisible, setModalVisible] = React.useState(false);
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [email, setEmail] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [courseData, setCourseData] = React.useState({});
   const [role, setRole] = React.useState('');
+  const [numOfStudents, setNumOfStudents] = React.useState(0);
+  const [ended, setEnded] = React.useState(false);
 
   const retrieveData = async () => {
     setLoading(true);
@@ -38,22 +44,16 @@ const CourseDetails = ({route}: CourseDetailsProps) => {
       const role = JSON.parse(await AsyncStorage.getItem('role'));
       await setRole(role);
       let emailId = '';
-      // if (role === '1') {
-      //   emailId = JSON.parse(await AsyncStorage.getItem('facultyEmail'));
-      //   console.log('Faculty Email:', emailId);
-      // } else {
-      //   emailId = JSON.parse(await AsyncStorage.getItem('taEmail'));
-      // }
-
-      //   const emailId = JSON.parse(await AsyncStorage.getItem('email'));
-      //   console.log('Email:', emailId);
-      // const response = await axios.get(`http://10.200.6.190:8080/getCourse`, {
-      //   params: {
-      //     Id: courseId,
-      //   },
-      // });
-      // console.log('Response:', response.data);
-      // await setCourseData(response.data);
+      const response = await axios.get(`http://10.200.6.190:8080/getCourse`, {
+        params: {
+          Id: courseId,
+        },
+      });
+      console.log('Response:', response.data);
+      await setNumOfStudents(response.data.numOfStudents);
+      if (response.data.ended !== null) {
+        await setEnded(response.data.ended);
+      }
     } catch (e) {
       console.log('Error:', e);
     } finally {
@@ -64,6 +64,19 @@ const CourseDetails = ({route}: CourseDetailsProps) => {
   React.useEffect(() => {
     retrieveData();
   }, []);
+
+  const handleEndTheCourse = async () => {
+    try {
+      const response = await axios.post(
+        `http://10.200.6.190:8080/endTheCourse?courseId=${courseId}`,
+      );
+      console.log('Response:', response.data);
+      setModalVisible(false);
+      retrieveData();
+    } catch (e) {
+      console.log('Error:', e);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -87,19 +100,185 @@ const CourseDetails = ({route}: CourseDetailsProps) => {
           <Icon2 name="user-circle" size={23} color="#2d2d2d" />
         </View>
       </View>
-      <View style={styles.subContainer}>
-        <View style={styles.header}>
-          {loading ? (
-            <ActivityIndicator size="large" color="#2d2d2d" />
-          ) : (
-            <Text style={styles.headerTitle}>{courseName}</Text>
-          )}
-        </View>
-        <View style={styles.courseContainer}>
-          <Text style={styles.courseContainerTitle}>Manage Course</Text>
-          {loading === false && role === '1' ? (
-            <Pressable style={styles.courseContainerItem}>
-              <Text style={styles.courseContainerItemTextTitle}>Add or Edit TA</Text>
+      <ScrollView
+        style={{
+          width: '100%',
+        }}>
+        <View style={styles.subContainer}>
+          <View
+            style={[
+              styles.header,
+              {
+                marginBottom: 20,
+                width: '90%',
+                justifyContent: 'space-between',
+                paddingVertical: 20,
+                paddingHorizontal: 10,
+                flexDirection: 'column',
+                alignItems: 'flex-start',
+              },
+            ]}>
+            {loading ? (
+              <ActivityIndicator size="large" color="#2d2d2d" />
+            ) : (
+              <>
+                <Text style={styles.headerTitle}>{courseName}</Text>
+                <Text
+                  style={[
+                    styles.headerTitle,
+                    {
+                      fontSize: 17,
+                      color: '#2d2d2d',
+                      fontWeight: 'normal',
+                    },
+                  ]}>
+                  Number of students: {numOfStudents}
+                </Text>
+              </>
+            )}
+          </View>
+          <View style={styles.courseContainer}>
+            <Text style={styles.courseContainerTitle}>
+              {ended ? 'Manage Grades' : null}
+            </Text>
+            {role === '1' && ended ? (
+              <Pressable
+                style={styles.courseContainerItem}
+                onPress={() => {
+                  navigation.push('ListOfStudents', {
+                    courseId: courseId,
+                    courseName: courseName,
+                  });
+                }}>
+                <Text style={styles.courseContainerItemTextTitle}>
+                  Submit grades (Students)
+                </Text>
+                <Icon
+                  name="caret-right"
+                  size={25}
+                  color="#2d2d2d"
+                  style={styles.courseContainerItemIcon}
+                />
+              </Pressable>
+            ) : null}
+            {/* {role === '1' && ended ? (
+              <Pressable style={styles.courseContainerItem} onPress={() => {}}>
+                <Text style={styles.courseContainerItemTextTitle}>
+                  Grade the TAs
+                </Text>
+                <Icon
+                  name="caret-right"
+                  size={25}
+                  color="#2d2d2d"
+                  style={styles.courseContainerItemIcon}
+                />
+              </Pressable>
+            ) : null} */}
+            <Text style={styles.courseContainerTitle}>
+              {ended ? 'View Course' : 'Manage course'}
+            </Text>
+            {!ended ? (
+              <>
+                <Pressable
+                  style={styles.courseContainerItem}
+                  onPress={() => {
+                    navigation.push('AddTopic', {
+                      courseId: courseId,
+                      courseName: courseName,
+                    });
+                  }}>
+                  <Text style={styles.courseContainerItemTextTitle}>
+                    Add a new topic
+                  </Text>
+                  <Icon
+                    name="caret-right"
+                    size={25}
+                    color="#2d2d2d"
+                    style={styles.courseContainerItemIcon}
+                  />
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    navigation.push('AddVideo', {
+                      courseId: courseId,
+                      courseName: courseName,
+                      topicId: null,
+                      topicName: null,
+                      topicDescription: null,
+                      topicStartedDate: null,
+                      topicAvailable: 1,
+                    });
+                  }}
+                  style={styles.courseContainerItem}>
+                  <Text style={styles.courseContainerItemTextTitle}>
+                    Add a new Video to topic
+                  </Text>
+                  <Icon
+                    name="caret-right"
+                    size={25}
+                    color="#2d2d2d"
+                    style={styles.courseContainerItemIcon}
+                  />
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    navigation.push('AddMaterial', {
+                      courseId: courseId,
+                      courseName: courseName,
+                      topicId: null,
+                      topicName: null,
+                      topicDescription: null,
+                      topicStartedDate: null,
+                      topicAvailable: 1,
+                    });
+                  }}
+                  style={styles.courseContainerItem}>
+                  <Text style={styles.courseContainerItemTextTitle}>
+                    Add a new material to topic
+                  </Text>
+                  <Icon
+                    name="caret-right"
+                    size={25}
+                    color="#2d2d2d"
+                    style={styles.courseContainerItemIcon}
+                  />
+                </Pressable>
+                <Pressable
+                  onPress={() => {
+                    navigation.push('AddAssignment', {
+                      courseId: courseId,
+                      courseName: courseName,
+                      topicId: null,
+                      topicName: null,
+                      topicDescription: null,
+                      topicStartedDate: null,
+                      topicAvailable: 1,
+                    });
+                  }}
+                  style={styles.courseContainerItem}>
+                  <Text style={styles.courseContainerItemTextTitle}>
+                    Add a new Assignments to topic
+                  </Text>
+                  <Icon
+                    name="caret-right"
+                    size={25}
+                    color="#2d2d2d"
+                    style={styles.courseContainerItemIcon}
+                  />
+                </Pressable>
+              </>
+            ) : null}
+            <Pressable
+              style={styles.courseContainerItem}
+              onPress={() => {
+                navigation.push('ViewTopics', {
+                  courseId: courseId,
+                  courseName: courseName,
+                });
+              }}>
+              <Text style={styles.courseContainerItemTextTitle}>
+                View Topics
+              </Text>
               <Icon
                 name="caret-right"
                 size={25}
@@ -107,132 +286,151 @@ const CourseDetails = ({route}: CourseDetailsProps) => {
                 style={styles.courseContainerItemIcon}
               />
             </Pressable>
-          ) : null}
-          <Pressable
-            style={styles.courseContainerItem}
-            onPress={() => {
-              navigation.push('AddTopic', {
-                courseId: courseId,
-                courseName: courseName,
-              });
-            }}>
-            <Text style={styles.courseContainerItemTextTitle}>
-              Add a new topic
+            <Text style={styles.courseContainerTitle}>
+              {ended ? 'View Tokens' : 'Manage Tokens'}
             </Text>
-            <Icon
-              name="caret-right"
-              size={25}
-              color="#2d2d2d"
-              style={styles.courseContainerItemIcon}
-            />
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              navigation.push('AddVideo', {
-                courseId: courseId,
-                courseName: courseName,
-                topicId: null,
-                topicName: null,
-                topicDescription: null,
-                topicStartedDate: null,
-                topicAvailable: 1,
-              });
-            }}
-            style={styles.courseContainerItem}>
-            <Text style={styles.courseContainerItemTextTitle}>
-              Add a new Video to topic
-            </Text>
-            <Icon
-              name="caret-right"
-              size={25}
-              color="#2d2d2d"
-              style={styles.courseContainerItemIcon}
-            />
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              navigation.push('AddMaterial', {
-                courseId: courseId,
-                courseName: courseName,
-                topicId: null,
-                topicName: null,
-                topicDescription: null,
-                topicStartedDate: null,
-                topicAvailable: 1,
-              });
-            }}
-            style={styles.courseContainerItem}>
-            <Text style={styles.courseContainerItemTextTitle}>
-              Add a new material to topic
-            </Text>
-            <Icon
-              name="caret-right"
-              size={25}
-              color="#2d2d2d"
-              style={styles.courseContainerItemIcon}
-            />
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              navigation.push('AddAssignment', {
-                courseId: courseId,
-                courseName: courseName,
-                topicId: null,
-                topicName: null,
-                topicDescription: null,
-                topicStartedDate: null,
-                topicAvailable: 1,
-              });
-            }}
-            style={styles.courseContainerItem}>
-            <Text style={styles.courseContainerItemTextTitle}>
-              Add a new Assignments to topic
-            </Text>
-            <Icon
-              name="caret-right"
-              size={25}
-              color="#2d2d2d"
-              style={styles.courseContainerItemIcon}
-            />
-          </Pressable>
-          <Text style={styles.courseContainerTitle}>Edit or Add details</Text>
-          <Pressable
-            style={styles.courseContainerItem}
-            onPress={() => {
-              navigation.push('ViewTopics', {
-                courseId: courseId,
-                courseName: courseName,
-              });
-            }}>
-            <Text style={styles.courseContainerItemTextTitle}>View Topics</Text>
-            <Icon
-              name="caret-right"
-              size={25}
-              color="#2d2d2d"
-              style={styles.courseContainerItemIcon}
-            />
-          </Pressable>
-          <Text style={styles.courseContainerTitle}>Course details</Text>
-          <Pressable
-            style={styles.courseContainerItem}
-            onPress={() => {
-              navigation.push('CourseDetailsEditOrView', {
-                courseId: courseId,
-                courseName: courseName,
-              });
-            }}>
-            <Text style={styles.courseContainerItemTextTitle}>
-              Edit or View course details
-            </Text>
-            <Icon
-              name="caret-right"
-              size={25}
-              color="#2d2d2d"
-              style={styles.courseContainerItemIcon}
-            />
-          </Pressable>
+            <Pressable
+              onPress={() => {
+                navigation.push('Tokens', {
+                  courseId: courseId,
+                  courseName: courseName,
+                });
+              }}
+              style={[
+                styles.courseContainerItem,
+                styles.shadowProp,
+                {paddingVertical: 12},
+              ]}>
+              <Text style={styles.courseContainerItemTextTitle}>Tokens</Text>
+              <Icon
+                name="caret-right"
+                size={25}
+                color="#2d2d2d"
+                style={styles.courseContainerItemIcon}
+              />
+            </Pressable>
+            {role === '1' ? (
+              <>
+                <Text style={styles.courseContainerTitle}>Course details</Text>
+                <Pressable
+                  style={styles.courseContainerItem}
+                  onPress={() => {
+                    navigation.push('CourseDetailsEditOrView', {
+                      courseId: courseId,
+                      courseName: courseName,
+                    });
+                  }}>
+                  <Text style={styles.courseContainerItemTextTitle}>
+                    Edit or View course details
+                  </Text>
+                  <Icon
+                    name="caret-right"
+                    size={25}
+                    color="#2d2d2d"
+                    style={styles.courseContainerItemIcon}
+                  />
+                </Pressable>
+                {role === '1' && !ended ? (
+                  <Pressable
+                    style={styles.courseContainerItem}
+                    onPress={() => {
+                      navigation.push('ListOfStudents', {
+                        courseId: courseId,
+                        courseName: courseName,
+                      });
+                    }}>
+                    <Text style={styles.courseContainerItemTextTitle}>
+                      List of students
+                    </Text>
+                    <Icon
+                      name="caret-right"
+                      size={25}
+                      color="#2d2d2d"
+                      style={styles.courseContainerItemIcon}
+                    />
+                  </Pressable>
+                ) : null}
+                {role === '1' && !ended ? (
+                  <Pressable
+                    style={styles.courseContainerItem}
+                    onPress={() => {
+                      setModalVisible(true);
+                    }}>
+                    <Text style={styles.courseContainerItemTextTitle}>
+                      End the course
+                    </Text>
+                    <Icon
+                      name="caret-right"
+                      size={25}
+                      color="#2d2d2d"
+                      style={styles.courseContainerItemIcon}
+                    />
+                  </Pressable>
+                ) : null}
+              </>
+            ) : null}
+          </View>
         </View>
-      </View>
+      </ScrollView>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => {
+          setModalVisible(!modalVisible);
+        }}>
+        <View style={styles.centeredView}>
+          <View style={styles.modalView}>
+            <Text
+              style={[
+                styles.modalText,
+                {
+                  color: '#2d2d2d',
+                  fontSize: 18,
+                  fontWeight: 'bold',
+                },
+              ]}>
+              Would you want to end the course?
+            </Text>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-around',
+                width: '100%',
+              }}>
+              <Pressable
+                style={[
+                  styles.button,
+                  styles.buttonClose,
+                  {
+                    backgroundColor: 'transparent',
+                    borderColor: '#2d2d2d',
+                    borderWidth: 1,
+                    elevation: 0,
+                  },
+                ]}
+                onPress={() => setModalVisible(!modalVisible)}>
+                <Text
+                  style={[
+                    styles.textStyle,
+                    {
+                      color: '#2d2d2d',
+                    },
+                  ]}>
+                  Cancel
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.button, styles.buttonClose]}
+                onPress={() => {
+                  handleEndTheCourse();
+                }}>
+                <Text style={styles.textStyle}>End the course</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -397,6 +595,48 @@ const styles = StyleSheet.create({
     color: '#eaeaea',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 35,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  button: {
+    borderRadius: 8,
+    padding: 10,
+    paddingHorizontal: 20,
+    elevation: 2,
+  },
+  buttonOpen: {
+    backgroundColor: '#F194FF',
+  },
+  buttonClose: {
+    backgroundColor: '#2d2d2d',
+  },
+  textStyle: {
+    color: 'white',
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  modalText: {
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  centeredView: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 15,
   },
 });
 

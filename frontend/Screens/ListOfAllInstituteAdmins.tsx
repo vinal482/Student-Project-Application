@@ -20,12 +20,12 @@ import Icon from 'react-native-vector-icons/FontAwesome6';
 import Icon2 from 'react-native-vector-icons/FontAwesome';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 
-type StudentDashboardProps = NativeStackScreenProps<
+type ListOfAllInstituteAdminsProps = NativeStackScreenProps<
   RootStackParamList,
-  'StudentDashboard'
+  'ListOfAllInstituteAdmins'
 >;
 
-const StudentDashboard = ({route}: StudentDashboardProps) => {
+const ListOfAllInstituteAdmins = ({route}: ListOfAllInstituteAdminsProps) => {
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [email, setEmail] = React.useState('');
@@ -33,37 +33,29 @@ const StudentDashboard = ({route}: StudentDashboardProps) => {
   const [password, setPassword] = React.useState('');
   const [passwordError, setPasswordError] = React.useState(false);
   const [loading, setLoading] = React.useState(false);
-  const [role, setRole] = React.useState('1');
-  const [studentData, setStudentData] = React.useState({});
+  const [role, setRole] = React.useState('3');
+  const [adminData, setAdminData] = React.useState([]);
   const [currentCourses, setCurrentCourses] = React.useState([]);
-  const [currentCoursesExist, setCurrentCoursesExist] = React.useState(false);
-  const [endedCoursesExist, setEndedCoursesExist] = React.useState(false);
 
   const retrieveData = async () => {
     setLoading(true);
     try {
       // const emailId = JSON.parse(await AsyncStorage.getItem('email'));
 
-      const emailId = JSON.parse(await AsyncStorage.getItem('email'));
-      if(emailId === null) {
+      const emailId = JSON.parse(await AsyncStorage.getItem('superAdminEmail'));
+      if (emailId === null) {
         await AsyncStorage.clear();
-        navigation.replace('FacultyTALogin');
+        navigation.replace('AdminLogin');
       }
       console.log('Email:', emailId);
-      const response = await axios.get(`http://10.200.6.190:8080/getStudent`, {
-        params: {
-          Id: emailId,
-        },
-      });
-      await AsyncStorage.setItem(
-        'studentName',
-        JSON.stringify(response.data.firstName + ' ' + response.data.lastName),
+      const response = await axios.get(
+        `http://10.200.6.190:8080/getAllInstituteAdmins`,
       );
       console.log('Response:', response.data);
       await setEmail(emailId);
-      await setStudentData(response.data);
-      if (response.data.courses !== null)
-        await setCurrentCourses(response.data.courses);
+      await setAdminData(response.data);
+      //   if (response.data.courses !== null)
+      //     await setCurrentCourses(response.data.courses);
     } catch (e) {
       console.log('Error:', e);
     } finally {
@@ -92,148 +84,66 @@ const StudentDashboard = ({route}: StudentDashboardProps) => {
             name="bell"
             size={23}
             color="#2d2d2d"
-            style={{marginRight: 15}}
-            onPress={()=>{
+            style={{marginRight: 5}}
+            onPress={() => {
               navigation.push('Notifications');
             }}
           />
-          <Icon2
-            name="user-circle"
-            size={23}
-            color="#2d2d2d"
-            onPress={() => {
-              navigation.push('StudentProfile');
-            }}
-          />
         </View>
-      </View>
-      <View style={[styles.bottomNavigationBar, styles.elevation]}>
-        <View
-          style={{
-            flexDirection: 'column',
-            alignItems: 'center',
-            width: '30%',
-            fontWeight: 'bold',
-          }}>
-          <Ionicons name="grid-outline" size={28} color="#1d1d1d" />
-          <Text style={{color: '#1d1d1d', fontSize: 16, fontWeight: 'bold'}}>
-            Dashboard
-          </Text>
-        </View>
-        <Pressable
-          onPress={() => {
-            navigation.replace('ExploreCourses');
-          }}
-          style={{flexDirection: 'column', alignItems: 'center', width: '30%'}}>
-          <Ionicons name="compass-outline" size={28} color="#6d6d6d" />
-          <Text style={{color: '#6d6d6d', fontSize: 16}}>Explore</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => {
-            navigation.replace('StudentProfile');
-          }}
-          style={{flexDirection: 'column', alignItems: 'center', width: '30%'}}>
-          <Ionicons name="person-outline" size={28} color="#6d6d6d" />
-          <Text style={{color: '#6d6d6d', fontSize: 16}}>Profile</Text>
-        </Pressable>
       </View>
       <ScrollView style={{width: '100%'}}>
         <View style={styles.subContainer}>
           <View style={{width: '100%', paddingLeft: 15}}>
-            <Text style={styles.title}>Welcome, {studentData.firstName}</Text>
+            {/* <Text style={styles.title}>Welcome, {adminData.name}</Text> */}
           </View>
           <View style={styles.courseContainer}>
-            <Text style={styles.courseContainerTitle}>Enrolled Courses</Text>
+            <Text style={styles.courseContainerTitle}>Institute Admins</Text>
             {loading ? (
               <ActivityIndicator size="large" color="#2d2d2d" />
             ) : (
               <>
-              <View style={{width: '100%', flexDirection: 'column-reverse'}}>
-                {currentCourses ? (
+                {adminData ? (
                   <>
-                    {currentCourses.map((item, index) => {
-                      if(item.graded) {
-                        // setEndedCoursesExist(true);
-                        return;
-                      }
-                      return (
-                        <Pressable
-                          style={styles.courseContainerItem}
-                          key={index}
-                          onPress={() => {
-                            navigation.push('ViewTopics', {
-                              courseId: item.id,
-                              courseName: item.name,
-                              facultyEmail: item.facultyEmail,
-                            });
-                          }}>
-                          <Text style={styles.courseContainerItemTextTitle}>
-                            {item.name}
-                          </Text>
-                          <Icon
-                            name="caret-right"
-                            size={20}
-                            color="#2d2d2d"
-                            style={styles.courseContainerItemIcon}
-                          />
-                        </Pressable>
-                      );
-                    })}
+                    {adminData.map((item: any, index: number) => (
+                      <View key={index} style={styles.courseContainerItem}>
+                        <Text style={styles.courseContainerItemTextTitle}>
+                          {item.name}
+                        </Text>
+                        <Text style={styles.courseContainerItemText}>
+                          {item.email}
+                        </Text>
+                        <Text style={styles.courseContainerItemText}>
+                          {item.instituteName}
+                        </Text>
+                      </View>
+                    ))}
                   </>
                 ) : (
-                  <Text style={{
-                    color: '#2d2d2d',
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                  }}>No courses available</Text>
+                  <Text
+                    style={{
+                      color: '#2d2d2d',
+                      fontSize: 18,
+                      fontWeight: 'bold',
+                    }}>
+                    No Institute Admins Found
+                  </Text>
                 )}
-              </View>
-              <Text style={styles.courseContainerTitle}>Ended Courses</Text>
-              <View style={{width: '100%', flexDirection: 'column-reverse'}}>
-                {currentCourses ? (
-                  <>
-                    {currentCourses.map((item, index) => {
-                      if(!item.graded) {
-                        // setCurrentCoursesExist(true);
-                        return;
-                      }
-                      return (
-                        <Pressable
-                          style={styles.courseContainerItem}
-                          key={index}
-                          onPress={() => {
-                            navigation.push('ViewTopics', {
-                              courseId: item.id,
-                              courseName: item.name,
-                              facultyEmail: item.facultyEmail,
-                            });
-                          }}>
-                          <Text style={styles.courseContainerItemTextTitle}>
-                            {item.name}
-                          </Text>
-                          <Icon
-                            name="caret-right"
-                            size={20}
-                            color="#2d2d2d"
-                            style={styles.courseContainerItemIcon}
-                          />
-                        </Pressable>
-                      );
-                    })}
-                  </>
-                ) : (
-                  <Text style={{
-                    color: '#2d2d2d',
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                  }}>No courses available</Text>
-                )}
-              </View>
               </>
             )}
           </View>
         </View>
       </ScrollView>
+      <TouchableOpacity style={styles.createNewCourseButtonContainer}>
+        <Icon2
+          name="plus"
+          size={30}
+          color="#eaeaea"
+          style={styles.createNewCourseButton}
+          onPress={() => {
+            navigation.push('CreateInstituteAdmin');
+          }}
+        />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -309,7 +219,8 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderColor: '#9d9d9d',
     borderWidth: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+    flexDirection: 'column',
     marginLeft: 10,
   },
   courseContainerItemIcon: {
@@ -318,17 +229,17 @@ const styles = StyleSheet.create({
   },
   courseContainerItemTextTitle: {
     color: '#2d2d2d',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   courseContainerItemText: {
-    color: '#2d2d2d',
-    fontSize: 16,
+    color: '#4d4d4d',
+    fontSize: 20,
   },
   createNewCourseButtonContainer: {
     position: 'absolute',
-    bottom: 115,
-    right: 20,
+    bottom: 50,
+    right: 25,
   },
   createNewCourseButton: {
     backgroundColor: '#2d2d2d',
@@ -402,4 +313,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default StudentDashboard;
+export default ListOfAllInstituteAdmins;

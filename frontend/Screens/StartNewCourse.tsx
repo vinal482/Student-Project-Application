@@ -17,6 +17,9 @@ import {RootStackParamList} from '../App';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome6';
+import SelectDropdown from 'react-native-select-dropdown';
+import Icon3 from 'react-native-vector-icons/MaterialCommunityIcons';
+
 
 type StartNewCourseProps = NativeStackScreenProps<
   RootStackParamList,
@@ -31,11 +34,14 @@ const StartNewCourse = ({route}: StartNewCourseProps) => {
   const [facultyData, setFacultyData] = React.useState({});
   const [facultyName, setFacultyName] = React.useState('');
   const [currentCourses, setCurrentCourses] = React.useState([]);
+  const [courseList, setCourseList] = React.useState([]);
 
   const [courseName, setCourseName] = React.useState('');
   const [courseDescription, setCourseDescription] = React.useState('');
   const [credits, setCredits] = React.useState('');
   const [domains, setDomains] = React.useState([]);
+  const [courseNameError, setCourseNameError] = React.useState(false);
+  const [semester, setSemester] = React.useState(0);
 
   const retrieveData = async () => {
     setLoading(true);
@@ -55,6 +61,24 @@ const StartNewCourse = ({route}: StartNewCourseProps) => {
       //   await setFacultyData(response.data);
       //   if (response.data.currentCourses !== null)
       //     await setCurrentCourses(response.data.currentCourseList);
+      const response = await axios.get(
+        `http://10.200.6.190:8080/getAllCoursesNameByFaculty`,
+        {
+          params: {
+            facultyEmail: emailId,
+          },
+        },
+      );
+      console.log('Response:', response.data);
+      let temp = [];
+      for (let i = 0; i < response.data.length; i++) {
+        let course = response.data[i];
+        // remove space from the course name amd convert all characted to small alphabet
+        course = course.replace(/\s/g, '');
+        course = course.toLowerCase();
+        temp.push(course);
+      }
+      await setCourseList(temp);
     } catch (e) {
       console.log('Error:', e);
     } finally {
@@ -67,6 +91,18 @@ const StartNewCourse = ({route}: StartNewCourseProps) => {
   }, []);
 
   const handleSubmit = async () => {
+    // remove white space from the last work of course name
+    let temp = courseName.trim();
+    console.log('Course Name:', temp);
+    await setCourseName(temp);
+    if (courseName === '' || courseDescription === '' || credits === '' || semester === 0) {
+      alert('Please fill all the fields');
+      return;
+    } else if (courseNameError) {
+      alert('Course name already exists');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await axios.post(
@@ -78,10 +114,11 @@ const StartNewCourse = ({route}: StartNewCourseProps) => {
           instructor: facultyName,
           facultyEmail: email,
           courseRating: 0,
+          semester: semester,
         },
       );
       console.log('Response:', response.data);
-      if(response.data === 'Successful') {
+      if (response.data === 'Successful') {
         alert('Course added successfully');
         navigation.pop(), navigation.replace('FacultyTADashboard');
       }
@@ -89,6 +126,38 @@ const StartNewCourse = ({route}: StartNewCourseProps) => {
       console.log(e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCourseName = async (text: string) => {
+    // if the prefix or the entire coursename is same as the courseList then show the alert
+    let temp = text.replace(/\s/g, '');
+    temp = temp.toLowerCase();
+    for (let i = 0; i < courseList.length; i++) {
+      if (courseList[i] === temp) {
+        await setCourseNameError(true);
+        break;
+      } else {
+        await setCourseNameError(false);
+      }
+    }
+    await setCourseName(text);
+  };
+
+  const handleCreditsChange = async (text: string) => {
+    if (text === '') {
+      await setCredits(2);
+      return;
+    }
+    1;
+    // parse text to float
+    // let temp = parseInt(text);
+    let temp = parseFloat(text);
+    if (temp >= 2 && temp <= 5) {
+      await setCredits(text);
+    } else {
+      await setCredits(2);
+      alert('Credits should be between 2 and 5');
     }
   };
 
@@ -119,11 +188,19 @@ const StartNewCourse = ({route}: StartNewCourseProps) => {
           <View style={styles.courseContainer}>
             <Text style={styles.courseContainerTitle}>Name *</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, {marginBottom: 0}]}
               placeholder="Enter Course Name"
-              onChangeText={text => setCourseName(text)}
+              onChangeText={text => handleCourseName(text)}
               placeholderTextColor="#4d4d4d"
             />
+            {courseNameError ? (
+              <Text style={{color: 'red', fontSize: 14, marginBottom: 5}}>
+                Course name already exists
+              </Text>
+            ) : (
+              <Text
+                style={{color: 'red', fontSize: 14, marginBottom: 5}}></Text>
+            )}
             <Text style={styles.courseContainerTitle}>Description *</Text>
             <TextInput
               style={[styles.input, {marginBottom: 0}]}
@@ -147,12 +224,78 @@ const StartNewCourse = ({route}: StartNewCourseProps) => {
             </Text>
             <Text style={styles.courseContainerTitle}>Credits *</Text>
             <TextInput
-              style={styles.input}
+              style={[
+                styles.input,
+                {
+                  marginBottom: 0,
+                },
+              ]}
               placeholder="Enter Credits"
-              onChangeText={text => setCredits(text)}
+              onChangeText={text => handleCreditsChange(text)}
               placeholderTextColor="#4d4d4d"
               keyboardType="numeric"
+              value={credits}
             />
+            <Text
+              style={[
+                styles.courseContainerTitle,
+                {
+                  color: '#5d5d5d',
+                  fontWeight: 'regular',
+                  marginBottom: 10,
+                  fontSize: 12,
+                },
+              ]}>
+              * between 2 to 5{' '}
+            </Text>
+            <Text style={styles.courseContainerTitle}>Semester</Text>
+            {/* select dropdown semester from 1 to 8 */}
+            <SelectDropdown
+                    data={[
+                      {id: 1, name: 'Semester 1'},
+                      {id: 2, name: 'Semester 2'},
+                      {id: 3, name: 'Semester 3'},
+                      {id: 4, name: 'Semester 4'},
+                      {id: 5, name: 'Semester 5'},
+                      {id: 6, name: 'Semester 6'},
+                      {id: 7, name: 'Semester 7'},
+                      {id: 8, name: 'Semester 8'},
+                    ]}
+                    onSelect={(selectedItem, index) => {
+                      console.log(selectedItem, index);
+                      setSemester(selectedItem.id);
+                    }}
+                    renderButton={(selectedItem, isOpened) => {
+                      return (
+                        <View style={styles.dropdownButtonStyle}>
+                          <Text style={styles.dropdownButtonTxtStyle}>
+                            {(selectedItem && selectedItem.name) ||
+                              'Select a topic*'}
+                          </Text>
+                          <Icon3
+                            name={isOpened ? 'chevron-up' : 'chevron-down'}
+                            style={styles.dropdownButtonArrowStyle}
+                            color="#2d2d2d"
+                          />
+                        </View>
+                      );
+                    }}
+                    renderItem={(item, index, isSelected) => {
+                      return (
+                        <View
+                          style={{
+                            ...styles.dropdownItemStyle,
+                            ...(isSelected && {backgroundColor: '#D2D9DF'}),
+                          }}>
+                          <Text style={styles.dropdownItemTxtStyle}>
+                            {item.name}
+                          </Text>
+                        </View>
+                      );
+                    }}
+                    showsVerticalScrollIndicator={true}
+                    dropdownStyle={styles.dropdownMenuStyle}
+                  />
           </View>
           <Pressable
             style={styles.submitButton}
@@ -316,6 +459,92 @@ const styles = StyleSheet.create({
     color: '#eaeaea',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  roleChoice: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    // width: '80%',
+    marginBottom: 10,
+    backgroundColor: '#fefefe',
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  choice: {
+    padding: 10,
+    margin: 5,
+    width: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  activeChoice: {
+    padding: 10,
+    margin: 5,
+    width: 100,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignItems: 'center',
+    backgroundColor: '#2d2d2d',
+    color: '#eaeaea',
+    borderRadius: 8,
+  },
+  choiceText: {
+    color: '#2d2d2d',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  activeChoiceText: {
+    color: '#eaeaea',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  dropdownButtonStyle: {
+    width: 200,
+    height: 50,
+    backgroundColor: '#E9ECEF19',
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: '#6d6d6d',
+    marginLeft: 10,
+    marginBottom: 15,
+  },
+  dropdownButtonTxtStyle: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#5d5d5d',
+  },
+  dropdownButtonArrowStyle: {
+    fontSize: 28,
+  },
+  dropdownButtonIconStyle: {
+    fontSize: 28,
+    marginRight: 8,
+  },
+  dropdownMenuStyle: {
+    backgroundColor: '#E9ECEF',
+    borderRadius: 8,
+  },
+  dropdownItemStyle: {
+    width: '100%',
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  dropdownItemTxtStyle: {
+    flex: 1,
+    fontSize: 18,
+    fontWeight: '500',
+    color: '#151E26',
+  },
+  dropdownItemIconStyle: {
+    fontSize: 28,
+    marginRight: 8,
   },
 });
 

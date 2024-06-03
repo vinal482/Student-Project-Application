@@ -19,11 +19,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome6';
 import Icon2 from 'react-native-vector-icons/FontAwesome';
 
-type ViewTopicsProps = NativeStackScreenProps<RootStackParamList, 'ViewTopics'>;
+type TokensProps = NativeStackScreenProps<RootStackParamList, 'Tokens'>;
 
-const ViewTopics = ({route}: ViewTopicsProps) => {
-  const {courseId, courseName, facultyEmail} = route.params;
-  console.log('Course ID:', courseId, facultyEmail);
+const Tokens = ({route}: TokensProps) => {
+  const {courseId, courseName, studentEmail, facultyEmail} = route.params;
+  console.log('Course ID:', courseId);
 
   const navigation =
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -33,40 +33,45 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
   const [credits, setCredits] = React.useState('');
   const [topicName, setTopicName] = React.useState('');
   const [description, setDescription] = React.useState('');
-  const [topics, setTopics] = React.useState([]);
+  const [tokens, setTokens] = React.useState([]);
   const [role, setRole] = React.useState('');
-  const [grades, setGrades] = React.useState(0);
 
   const retrieveData = async () => {
     setLoading(true);
     try {
-      const role = await JSON.parse(await AsyncStorage.getItem('role'));
+      const role = JSON.parse(await AsyncStorage.getItem('role'));
+      setRole(role);
       let emailId = '';
-      let res = null;
-      if (role === '1')
+      if (role === '2')
+        emailId = JSON.parse(await AsyncStorage.getItem('email'));
+      else if (role === '1')
         emailId = JSON.parse(await AsyncStorage.getItem('facultyEmail'));
-      else if (role === '2') {
-        emailId = await JSON.parse(await AsyncStorage.getItem('email'));
-        // res = await axios.get(`http://10.200.6.190:8080/getResultsByStudent`, {
-        //   params: {
-        //     courseId: courseId,
-        //     studentEmail: emailId,
-        //   },
-        // });
-        // console.log('Results:', res.data);
-        // await setGrades(res.data.grades);
-      } else if (role === '0')
-        emailId = JSON.parse(await AsyncStorage.getItem('taEmail'));
+      else emailId = JSON.parse(await AsyncStorage.getItem('taEmail'));
       console.log('Email:', emailId);
-      const response = await axios.get(`http://10.200.6.190:8080/getTopics`, {
-        params: {
-          Id: courseId,
-        },
-      });
+      let response = null;
+      if(role === '2') {
+        response = await axios.get(
+          `http://10.200.6.190:8080/getTokens`,
+          {
+            params: {
+              courseId: courseId,
+              studentEmail: emailId,
+            },
+          },
+        );
+      } else {
+        response = await axios.get(
+          `http://10.200.6.190:8080/getAllTokensByCourse`,
+          {
+            params: {
+              courseId: courseId,
+            },
+          },
+        );
+      }
       console.log('Response:', response.data);
-      await setTopics(response.data);
+      await setTokens(response.data);
       await setEmail(emailId);
-      await setRole(role);
     } catch (e) {
       console.log('Error:', e);
     } finally {
@@ -77,6 +82,35 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
   React.useEffect(() => {
     retrieveData();
   }, []);
+
+  const formatDateTime = dateTimeString => {
+    if (!dateTimeString) return null; // Handle empty string
+
+    try {
+      // Parse the date time string using Date object
+      const dateObj = new Date(dateTimeString);
+
+      // Extract components for formatting
+      const day = dateObj.getDate().toString().padStart(2, '0');
+      const month = (dateObj.getMonth() + 1).toString().padStart(2, '0'); // Months are 0-indexed
+      const year = dateObj.getFullYear();
+
+      // Format the time portion
+      const hour = dateObj.getHours();
+      const minute = dateObj.getMinutes().toString().padStart(2, '0');
+
+      // Handle 12-hour clock format and meridiem
+      let formattedHour = hour === 0 ? 12 : hour % 12; // Handle midnight as 12
+      const meridiem = hour >= 12 ? 'pm' : 'am';
+      if (hour == 12) formattedHour = 12;
+      if (formattedHour < 10) formattedHour = '0' + formattedHour;
+      // Return the formatted date time string
+      return `${day}-${month}-${year} ${formattedHour}:${minute} ${meridiem}`;
+    } catch (error) {
+      console.error('Error formatting date time string:', error);
+      return null; // Handle parsing errors
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -90,13 +124,6 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
           />
         </View>
         <View style={styles.navigationIcons}>
-          <Icon
-            name="bell"
-            size={23}
-            color="#2d2d2d"
-            style={{marginRight: 15}}
-          />
-          <Icon2 name="user-circle" size={23} color="#2d2d2d" />
         </View>
       </View>
       <ScrollView style={{width: '100%'}}>
@@ -105,10 +132,10 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
             <Text style={styles.headerTitle}>{courseName}</Text>
           </View>
           <View style={styles.courseContainer}>
-            {grades ? null : (
+            {role === '2' ? (
               <Pressable
                 onPress={() => {
-                  navigation.push('Tokens', {
+                  navigation.push('RaiseAToken', {
                     courseId: courseId,
                     courseName: courseName,
                     studentEmail: email,
@@ -120,7 +147,9 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
                   styles.shadowProp,
                   {paddingVertical: 12},
                 ]}>
-                <Text style={styles.courseContainerItemTextTitle}>Tokens</Text>
+                <Text style={styles.courseContainerItemTextTitle}>
+                  Raise a token
+                </Text>
                 <Icon
                   name="caret-right"
                   size={25}
@@ -128,47 +157,29 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
                   style={styles.courseContainerItemIcon}
                 />
               </Pressable>
-            )}
-            {!loading && grades ? (
-              <>
-                <Text
-                  style={[
-                    styles.title,
-                    {
-                      marginBottom: 5,
-                    },
-                  ]}>
-                  Result
-                </Text>
-                <Text
-                  style={[
-                    styles.courseContainerItemTextTitle,
-                    {
-                      marginBottom: 10,
-                    },
-                  ]}>
-                  Grades: {grades}
-                </Text>
-              </>
             ) : null}
-            <Text style={styles.title}>Topics</Text>
+            {role !== '2' ? (
+              <Text style={styles.title}>Unresolved Tokens</Text>
+            ) : (
+              <Text style={styles.title}>Unresolved Tokens</Text>
+            )}
             {loading ? (
               <ActivityIndicator size="large" color="#2d2d2d" />
             ) : (
-              <View style={{flexDirection: 'column-reverse', width: '100%'}}>
-                {topics ? (
+              <View style={{flexDirection: 'column', width: '100%'}}>
+                {tokens ? (
                   <>
-                    {topics.map((topic, index) => {
+                    {tokens.map((topic, index) => {
+                      if (topic.isResolved === true) return;
                       return (
                         <Pressable
                           onPress={() => {
-                            navigation.navigate('Topic', {
+                            navigation.push('TokenChats', {
                               courseId: courseId,
                               courseName: courseName,
-                              topicId: topic.id,
-                              topicName: topic.name,
-                              topicDescription: topic.description,
-                              topicStartedDate: topic.createdDate,
+                              studentEmail: topic.email,
+                              facultyEmail: facultyEmail,
+                              id: topic.id,
                             });
                           }}
                           style={[
@@ -176,11 +187,19 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
                             styles.shadowProp,
                           ]}
                           key={index}>
+                          {role !== '2' ? (
+                            <Text style={styles.courseContainerItemText}>
+                              {topic.email}
+                            </Text>
+                          ) : null}
                           <Text style={styles.courseContainerItemTextTitle}>
-                            {topic.name}
+                            {topic.title}
                           </Text>
                           <Text style={styles.courseContainerItemText}>
                             {topic.description}
+                          </Text>
+                          <Text style={styles.courseContainerItemText}>
+                            {formatDateTime(topic.createdDateTime)}
                           </Text>
                           <Icon
                             name="caret-right"
@@ -199,7 +218,72 @@ const ViewTopics = ({route}: ViewTopicsProps) => {
                       fontSize: 16,
                       fontWeight: 'bold',
                     }}>
-                    No topics available
+                    No tokens available
+                  </Text>
+                )}
+              </View>
+            )}
+            {role !== '2' ? (
+              <Text style={styles.title}>Resolved Tokens</Text>
+            ) : (
+              <Text style={styles.title}>Resolved Tokens</Text>
+            )}
+            {loading ? (
+              <ActivityIndicator size="large" color="#2d2d2d" />
+            ) : (
+              <View style={{flexDirection: 'column-reverse', width: '100%'}}>
+                {tokens ? (
+                  <>
+                    {tokens.map((topic, index) => {
+                      if (topic.isResolved === false) return;
+                      return (
+                        <Pressable
+                          onPress={() => {
+                            navigation.push('TokenChats', {
+                              courseId: courseId,
+                              courseName: courseName,
+                              studentEmail: topic.email,
+                              facultyEmail: facultyEmail,
+                              id: topic.id,
+                            });
+                          }}
+                          style={[
+                            styles.courseContainerItem,
+                            styles.shadowProp,
+                          ]}
+                          key={index}>
+                          {role !== '2' ? (
+                            <Text style={styles.courseContainerItemText}>
+                              {topic.email}
+                            </Text>
+                          ) : null}
+                          <Text style={styles.courseContainerItemTextTitle}>
+                            {topic.title}
+                          </Text>
+                          <Text style={styles.courseContainerItemText}>
+                            {topic.description}
+                          </Text>
+                          <Text style={styles.courseContainerItemText}>
+                            {formatDateTime(topic.createdDateTime)}
+                          </Text>
+                          <Icon
+                            name="caret-right"
+                            size={25}
+                            color="#2d2d2d"
+                            style={styles.courseContainerItemIcon}
+                          />
+                        </Pressable>
+                      );
+                    })}
+                  </>
+                ) : (
+                  <Text
+                    style={{
+                      color: '#2d2d2d',
+                      fontSize: 16,
+                      fontWeight: 'bold',
+                    }}>
+                    No tokens available
                   </Text>
                 )}
               </View>
@@ -392,4 +476,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ViewTopics;
+export default Tokens;
