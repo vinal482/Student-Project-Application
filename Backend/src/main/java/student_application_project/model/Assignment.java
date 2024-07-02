@@ -21,6 +21,7 @@ public class Assignment {
     private String url;
     private String courseId;
     private String topicId;
+    private float maxMarks;
     private LocalTime createdTime = LocalTime.now();
     private LocalDate createdDate = LocalDate.now();
     private String dueDate;

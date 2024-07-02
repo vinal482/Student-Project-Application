@@ -12,4 +12,7 @@ public interface StudentAssignmentSubmissionRepo extends MongoRepository<Student
 
     @Query("{ 'assignmentId' : ?0, 'studentId' : ?1 }")
     public StudentAssignmentSubmission findByAssignmentIdAndStudentId(String assignmentId, String studentId);
+
+    @Query("{ 'courseId' : ?0, 'studentId' : ?1 }")
+    public List<StudentAssignmentSubmission> findByCourseIdAndStudentId(String courseId, String studentId);
 }

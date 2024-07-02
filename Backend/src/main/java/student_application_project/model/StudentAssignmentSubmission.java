@@ -19,7 +19,13 @@ public class StudentAssignmentSubmission {
     @Id
     private String id;
     private String assignmentId;
+    private String assignmentName;
+    private String courseId;
+    private String topicName;
     private String studentId;
     private String studentName;
     private List<SubmissionFiles> submissionFiles;
+    private Boolean isEvaluated = false;
+    private float maxMarks;
+    private float obtainedMarks;
 }

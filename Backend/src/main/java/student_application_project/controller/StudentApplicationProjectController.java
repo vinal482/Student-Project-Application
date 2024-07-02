@@ -15,6 +15,7 @@ import student_application_project.model.Students;
 import student_application_project.repository.StudentApplicationProjectRepo;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:3000")
 public class StudentApplicationProjectController {
 
     @Autowired

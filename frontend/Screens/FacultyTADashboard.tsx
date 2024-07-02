@@ -65,6 +65,10 @@ const FacultyTADashboard = ({route}: FacultyTADashboardProps) => {
         });
         console.log('Email:', emailId);
         await AsyncStorage.setItem(
+          'instituteName',
+          await JSON.stringify(response.data.instituteName),
+        );
+        await AsyncStorage.setItem(
           'facultyName',
           JSON.stringify(response.data.name),
         );
@@ -80,7 +84,10 @@ const FacultyTADashboard = ({route}: FacultyTADashboardProps) => {
         );
         console.log('Email:', emailId);
         await setTAData(response.data);
-        await AsyncStorage.setItem('taIsAvailable', JSON.stringify(response.data.isAvailable));
+        await AsyncStorage.setItem(
+          'taIsAvailable',
+          JSON.stringify(response.data.isAvailable),
+        );
         console.log('TA Data:', response.data.currentCourses);
         if (response.data.currentCourses !== null)
           await setCurrentCourses(response.data.currentCourses);
@@ -163,7 +170,9 @@ const FacultyTADashboard = ({route}: FacultyTADashboardProps) => {
       <ScrollView style={{width: '100%'}}>
         <View style={styles.subContainer}>
           <View style={{width: '100%', paddingLeft: 15}}>
-            <Text style={styles.title}>Welcome, {facultyData ? facultyData.name : "NULL"}</Text>
+            <Text style={styles.title}>
+              Welcome, {facultyData ? facultyData.name : 'NULL'}
+            </Text>
           </View>
           <View style={styles.courseContainer}>
             {role === '1' ? (
@@ -213,7 +222,7 @@ const FacultyTADashboard = ({route}: FacultyTADashboardProps) => {
           </View>
         </View>
       </ScrollView>
-      {role === '1' ? (
+      {role === '1' && facultyData.currentSemesterCourses < 2 ? (
         <View style={styles.createNewCourseButtonContainer}>
           <TouchableOpacity
             style={styles.createNewCourseButton}

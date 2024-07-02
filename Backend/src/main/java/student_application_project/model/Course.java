@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Setter
@@ -19,7 +20,7 @@ public class Course {
     private String id;
     @Indexed(unique = true)
     private String name;
-    private String description;
+    private String description = "Description not available";
     private String instructor;
     private String facultyEmail;
     private double credits;
@@ -29,4 +30,16 @@ public class Course {
     private List<TADetails> tas;
     private List<Topic> topics;
     private List<StudentCustom> students;
+    private boolean isAvailable = true;
+    private boolean isEnded = false;
+    private boolean isArchived = false;
+    private boolean isGraded = false;
+    private List<Result> results;
+    private short semester = 0;
+    private String instituteName;
+    private Boolean isApprovedByAdmin = false;
+    private Boolean isCoreCourse = false;
+    private String prerequisites = "";
+    private  String prerequisiteCourseName= "";
+    private int maxStudentNum = 100;
 }

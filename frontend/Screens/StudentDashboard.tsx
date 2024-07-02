@@ -38,14 +38,17 @@ const StudentDashboard = ({route}: StudentDashboardProps) => {
   const [currentCourses, setCurrentCourses] = React.useState([]);
   const [currentCoursesExist, setCurrentCoursesExist] = React.useState(false);
   const [endedCoursesExist, setEndedCoursesExist] = React.useState(false);
+  const [isCourseRegistrationOpen, setIsCourseRegistrationOpen] =
+    React.useState(false);
 
   const retrieveData = async () => {
     setLoading(true);
     try {
       // const emailId = JSON.parse(await AsyncStorage.getItem('email'));
 
-      const emailId = JSON.parse(await AsyncStorage.getItem('email'));
-      if(emailId === null) {
+      const emailId = await JSON.parse(await AsyncStorage.getItem('email'));
+
+      if (emailId === null) {
         await AsyncStorage.clear();
         navigation.replace('FacultyTALogin');
       }
@@ -59,6 +62,25 @@ const StudentDashboard = ({route}: StudentDashboardProps) => {
         'studentName',
         JSON.stringify(response.data.firstName + ' ' + response.data.lastName),
       );
+      console.log(response.data.courseRegistrationOpen);
+      await setIsCourseRegistrationOpen(response.data.courseRegistrationOpen);
+      await AsyncStorage.setItem(
+        'instituteName',
+        JSON.stringify(response.data.instituteName),
+      );
+
+      if (response.data.tempRegisteredCourses) {
+        await AsyncStorage.setItem(
+          'tempRegisteredCourses',
+          JSON.stringify(response.data.tempRegisteredCourses),
+        );
+      }
+
+      let semester = response.data.semester;
+      // convert to string
+      semester = semester.toString();
+
+      await AsyncStorage.setItem('semester', JSON.stringify(semester));
       console.log('Response:', response.data);
       await setEmail(emailId);
       await setStudentData(response.data);
@@ -93,7 +115,7 @@ const StudentDashboard = ({route}: StudentDashboardProps) => {
             size={23}
             color="#2d2d2d"
             style={{marginRight: 15}}
-            onPress={()=>{
+            onPress={() => {
               navigation.push('Notifications');
             }}
           />
@@ -142,93 +164,82 @@ const StudentDashboard = ({route}: StudentDashboardProps) => {
           <View style={{width: '100%', paddingLeft: 15}}>
             <Text style={styles.title}>Welcome, {studentData.firstName}</Text>
           </View>
+          {isCourseRegistrationOpen ? (
+            <TouchableOpacity
+              onPress={() => {
+                navigation.push('CourseRegistration', {
+                  studentEmail: studentData.email,
+                  sem: studentData.semester,
+                  instituteName: studentData.instituteName,
+                });
+              }}
+              style={[
+                styles.courseContainerItem,
+                {
+                  backgroundColor: '#fefefe',
+                  borderColor: '#9d9d9d',
+                  borderWidth: 1,
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                  width: '85%',
+                },
+              ]}>
+              <Text style={styles.courseContainerItemTextTitle}>
+                Course Registration
+              </Text>
+              <Icon
+                name="caret-right"
+                size={20}
+                color="#2d2d2d"
+                style={styles.courseContainerItemIcon}
+              />
+            </TouchableOpacity>
+          ) : null}
           <View style={styles.courseContainer}>
             <Text style={styles.courseContainerTitle}>Enrolled Courses</Text>
             {loading ? (
               <ActivityIndicator size="large" color="#2d2d2d" />
             ) : (
               <>
-              <View style={{width: '100%', flexDirection: 'column-reverse'}}>
-                {currentCourses ? (
-                  <>
-                    {currentCourses.map((item, index) => {
-                      if(item.graded) {
-                        // setEndedCoursesExist(true);
-                        return;
-                      }
-                      return (
-                        <Pressable
-                          style={styles.courseContainerItem}
-                          key={index}
-                          onPress={() => {
-                            navigation.push('ViewTopics', {
-                              courseId: item.id,
-                              courseName: item.name,
-                              facultyEmail: item.facultyEmail,
-                            });
-                          }}>
-                          <Text style={styles.courseContainerItemTextTitle}>
-                            {item.name}
-                          </Text>
-                          <Icon
-                            name="caret-right"
-                            size={20}
-                            color="#2d2d2d"
-                            style={styles.courseContainerItemIcon}
-                          />
-                        </Pressable>
-                      );
-                    })}
-                  </>
-                ) : (
-                  <Text style={{
-                    color: '#2d2d2d',
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                  }}>No courses available</Text>
-                )}
-              </View>
-              <Text style={styles.courseContainerTitle}>Ended Courses</Text>
-              <View style={{width: '100%', flexDirection: 'column-reverse'}}>
-                {currentCourses ? (
-                  <>
-                    {currentCourses.map((item, index) => {
-                      if(!item.graded) {
-                        // setCurrentCoursesExist(true);
-                        return;
-                      }
-                      return (
-                        <Pressable
-                          style={styles.courseContainerItem}
-                          key={index}
-                          onPress={() => {
-                            navigation.push('ViewTopics', {
-                              courseId: item.id,
-                              courseName: item.name,
-                              facultyEmail: item.facultyEmail,
-                            });
-                          }}>
-                          <Text style={styles.courseContainerItemTextTitle}>
-                            {item.name}
-                          </Text>
-                          <Icon
-                            name="caret-right"
-                            size={20}
-                            color="#2d2d2d"
-                            style={styles.courseContainerItemIcon}
-                          />
-                        </Pressable>
-                      );
-                    })}
-                  </>
-                ) : (
-                  <Text style={{
-                    color: '#2d2d2d',
-                    fontSize: 16,
-                    fontWeight: 'bold',
-                  }}>No courses available</Text>
-                )}
-              </View>
+                <View style={{width: '100%', flexDirection: 'column-reverse'}}>
+                  {currentCourses ? (
+                    <>
+                      {currentCourses.map((item, index) => {
+                        return (
+                          <Pressable
+                            style={styles.courseContainerItem}
+                            key={index}
+                            onPress={() => {
+                              navigation.push('ViewTopics', {
+                                courseId: item.id,
+                                courseName: item.name,
+                                facultyEmail: item.facultyEmail,
+                              });
+                            }}>
+                            <Text style={styles.courseContainerItemTextTitle}>
+                              {item.name}
+                            </Text>
+                            <Icon
+                              name="caret-right"
+                              size={20}
+                              color="#2d2d2d"
+                              style={styles.courseContainerItemIcon}
+                            />
+                          </Pressable>
+                        );
+                      })}
+                    </>
+                  ) : (
+                    <Text
+                      style={{
+                        color: '#2d2d2d',
+                        fontSize: 16,
+                        fontWeight: 'bold',
+                      }}>
+                      No courses available
+                    </Text>
+                  )}
+                </View>
               </>
             )}
           </View>

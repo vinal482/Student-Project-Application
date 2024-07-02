@@ -13,6 +13,7 @@ import student_application_project.repository.*;
 import java.util.*;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:3000")
 public class TAController {
     @Autowired
     private TArepo repo;
@@ -133,6 +134,13 @@ public class TAController {
                 notification1.setReceiverEmail(course.getFacultyEmail());
                 notification1.setEmail(course.getFacultyEmail());
                 notificationRepo.save(notification1);
+                List<String> notifications = ta.getRequestNotifications();
+                if(notifications == null) {
+                    notifications = new ArrayList<>();
+                }
+                notifications.add(notification1.getId());
+                ta.setRequestNotifications(notifications);
+                taRepo.save(ta);
 //                notification.setEmail(course.getFacultyEmail());
 //                notificationRepo.save(notification);
                 return new ResponseEntity<>("Pass", null, HttpStatus.OK);
@@ -176,6 +184,23 @@ public class TAController {
                 notifications.setReceiverRole("TA");
                 notifications.setEmail(ta.getEmail());
                 notificationRepo.save(notifications);
+                List <String> notifications1 = ta.getRequestNotifications();
+                for (String s : notifications1) {
+                    if(s.equals(notificationId)) {
+                        notifications1.remove(s);
+                        break;
+                    }
+                    Optional<Notifications> notificationS = notificationRepo.findById(s);
+                    if (notificationS.isPresent()) {
+                        Notifications notification1 = notificationS.get();
+                        notification1.setType(1);
+                        notification1.setTitle("TA not Available");
+                        notification1.setMessage("TA " + ta.getName() + " is not available.");
+                        notification1.setRequestRejection(true);
+                        notificationRepo.save(notification1);
+                    }
+                }
+                ta.setIsAvailable(false);
                 toAddCourseToTA(ta, course);
                 return new ResponseEntity<>("Accepted", null, HttpStatus.OK);
             } else {
@@ -220,6 +245,24 @@ public class TAController {
                 notifications.setRequestRejection(true);
                 notifications.setEmail(ta.getEmail());
                 notificationRepo.save(notifications);
+                List <String> notifications1 = ta.getRequestNotifications();
+                for (String s : notifications1) {
+                    if(s.equals(notificationId)) {
+                        notifications1.remove(s);
+                        break;
+                    }
+                    Optional<Notifications> notificationS = notificationRepo.findById(s);
+                    if (notificationS.isPresent()) {
+                        Notifications notification1 = notificationS.get();
+                        if (notification1.getCourseId().equals(course.getId())) {
+                            notification1.setType(1);
+                            notification1.setTitle("TA not Available");
+                            notification1.setMessage("TA " + ta.getName() + " is not available.");
+                            notification1.setRequestRejection(true);
+                            notificationRepo.save(notification1);
+                        }
+                    }
+                }
 //                toAddCourseToTA(ta, course);
                 return new ResponseEntity<>("Accepted", null, HttpStatus.OK);
             } else {

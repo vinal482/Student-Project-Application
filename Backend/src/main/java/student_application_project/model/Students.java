@@ -7,6 +7,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 import jakarta.validation.constraints.NotNull;
 // import jakarta.validation.constraints.Column;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,12 +34,23 @@ public class Students {
     @Id
     @Indexed(unique = true)
     private String email;
-    @NotNull(message = "LogedIn cannot be null")
+    @NotNull(message = "LoggedIn cannot be null")
     private boolean loggedIn;
-
+    private short semester = 1;
     private String dateOfBirth;
+    private String instituteAdminEmail;
     private String gander;
     private String Program;
     private String instituteName;
     private List<Course> courses;
+    private boolean isCourseRegistrationOpen = false;
+    private LocalDate lastDateOfCourseRegistration;
+    private List<String> tempRegisteredCourses = new ArrayList<>();
+    private List<?>[] semesterWiseCourses;
+
+    {
+        semesterWiseCourses = new List<?>[8];
+    }
+
+    private List<List<Result>> semesterWiseResults = new ArrayList<>();
 }

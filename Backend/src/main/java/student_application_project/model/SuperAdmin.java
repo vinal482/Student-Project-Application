@@ -13,13 +13,12 @@ import org.springframework.data.annotation.Id;
 public class SuperAdmin {
     @Id
     private String email;
-    private String firstName;
-    private String lastName;
+    private String name;
     private String mobileNumber;
     private String dateOfBirth;
     private String gander;
     private String password;
-    private int numberOfInstituteAdmins;
-    private int numberOfFaculties;
-    private int numberOfTAs;
+    private int numberOfInstituteAdmins = 1;
+    private int numberOfFaculties = 1;
+    private int numberOfTAs = 1;
 }

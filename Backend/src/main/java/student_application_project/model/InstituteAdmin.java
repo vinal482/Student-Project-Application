@@ -17,15 +17,21 @@ import java.util.List;
 public class InstituteAdmin {
     @Id
     private String email;
-    private String firstName;
-    private String lastName;
+    private String name;
     private String mobileNumber;
     private String dateOfBirth;
     private String gander;
     private String instituteName;
     private String password;
-    private int numberOfFaculties;
-    private int numberOfTAs;
-    private List<Pair<String,String >> faculties = new ArrayList<>();
-    private List<Pair<String,String >> tas = new ArrayList<>();
+    private int numberOfFaculties = 0;
+    private int numberOfTAs = 0;
+    private int numberOfStudents = 0;
+    private List<FacultyInfoForAdmin> faculties = new ArrayList<>();
+    private List<TAInformationForAdmin> tas = new ArrayList<>();
+    private List<StudentDetails> students = new ArrayList<>();
+    private List<StudentCustom> studentWhoTempRegistered = new ArrayList<>();
+    private int [] semesterWiseRegisterCount = new int[]{0,0,0,0,0,0,0,0};
+    private int [] semesterWiseStudentCount = new int[]{0,0,0,0,0,0,0,0};
+    private boolean isCourseRegistrationOpen = false;
+    private boolean isCourseRegistrationEnded = false;
 }

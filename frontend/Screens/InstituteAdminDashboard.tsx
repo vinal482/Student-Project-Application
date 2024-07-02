@@ -37,6 +37,9 @@ const InstituteAdminDashboard = ({route}: InstituteAdminDashboardProps) => {
   const [role, setRole] = React.useState('3');
   const [adminData, setAdminData] = React.useState({});
   const [currentCourses, setCurrentCourses] = React.useState([]);
+  const [numberOfFaculties, setNumberOfFaculties] = React.useState(0);
+  const [numberOfTAs, setNumberOfTAs] = React.useState(0);
+  const [numberOfStudents, setNumberOfStudents] = React.useState(0);
 
   const retrieveData = async () => {
     setLoading(true);
@@ -59,6 +62,9 @@ const InstituteAdminDashboard = ({route}: InstituteAdminDashboardProps) => {
       );
       console.log('Response:', response.data);
       await setEmail(emailId);
+      await setNumberOfFaculties(response.data.numberOfFaculties);
+      await setNumberOfTAs(response.data.numberOfTAs);
+      await setNumberOfStudents(response.data.numberOfStudents);
       await setAdminData(response.data);
       //   if (response.data.courses !== null)
       //     await setCurrentCourses(response.data.courses);
@@ -126,12 +132,6 @@ const InstituteAdminDashboard = ({route}: InstituteAdminDashboardProps) => {
                   <Text style={styles.courseContainerItemText}>
                     Institute: {adminData.instituteName}
                   </Text>
-                  <Text style={styles.courseContainerItemText}>
-                    Faculties: {adminData.numberOfFaculties}
-                  </Text>
-                  <Text style={styles.courseContainerItemText}>
-                    TAs: {adminData.numberOfTAs}
-                  </Text>
                 </View>
                 <Text style={styles.courseContainerTitle}>Manage</Text>
                 <View
@@ -140,7 +140,6 @@ const InstituteAdminDashboard = ({route}: InstituteAdminDashboardProps) => {
                     flexDirection: 'row',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    marginBottom: 10,
                   }}>
                   <TouchableOpacity
                     onPress={() => {
@@ -158,7 +157,7 @@ const InstituteAdminDashboard = ({route}: InstituteAdminDashboardProps) => {
                       },
                     ]}>
                     <Text style={styles.courseContainerItemTextTitle}>
-                      Faculty
+                      Faculty ({numberOfFaculties})
                     </Text>
                     <Icon
                       name="caret-right"
@@ -182,7 +181,43 @@ const InstituteAdminDashboard = ({route}: InstituteAdminDashboardProps) => {
                         width: '47%',
                       },
                     ]}>
-                    <Text style={styles.courseContainerItemTextTitle}>TAs</Text>
+                    <Text style={styles.courseContainerItemTextTitle}>
+                      TAs ({numberOfTAs})
+                    </Text>
+                    <Icon
+                      name="caret-right"
+                      size={20}
+                      color="#2d2d2d"
+                      style={styles.courseContainerItemIcon}
+                    />
+                  </TouchableOpacity>
+                </View>
+                <View
+                  style={{
+                    width: '100%',
+                    flexDirection: 'row',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    marginBottom: 0,
+                  }}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      navigation.push('ListOfStudentsForAdmin');
+                    }}
+                    style={[
+                      styles.courseContainerItem,
+                      {
+                        backgroundColor: '#fefefe',
+                        borderColor: '#9d9d9d',
+                        borderWidth: 1,
+                        justifyContent: 'flex-start',
+                        alignItems: 'center',
+                        width: '47%',
+                      },
+                    ]}>
+                    <Text style={styles.courseContainerItemTextTitle}>
+                      Student ({numberOfStudents})
+                    </Text>
                     <Icon
                       name="caret-right"
                       size={20}
@@ -205,7 +240,8 @@ const InstituteAdminDashboard = ({route}: InstituteAdminDashboardProps) => {
                   <TouchableOpacity
                     onPress={() => {
                       navigation.push('ListCourseBySemesterAndInstitute', {
-                        semester: 1, institute: adminData.instituteName
+                        semester: 1,
+                        institute: adminData.instituteName,
                       });
                     }}
                     style={[
@@ -231,8 +267,9 @@ const InstituteAdminDashboard = ({route}: InstituteAdminDashboardProps) => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => {
-                      navigation.push('ListCourseBySemesterAndInstitute',{
-                        semester: 2, institute: adminData.instituteName
+                      navigation.push('ListCourseBySemesterAndInstitute', {
+                        semester: 2,
+                        institute: adminData.instituteName,
                       });
                     }}
                     style={[
@@ -267,8 +304,9 @@ const InstituteAdminDashboard = ({route}: InstituteAdminDashboardProps) => {
                   }}>
                   <TouchableOpacity
                     onPress={() => {
-                      navigation.push('ListCourseBySemesterAndInstitute',{
-                        semester: 3, institute: adminData.instituteName
+                      navigation.push('ListCourseBySemesterAndInstitute', {
+                        semester: 3,
+                        institute: adminData.instituteName,
                       });
                     }}
                     style={[
@@ -294,8 +332,9 @@ const InstituteAdminDashboard = ({route}: InstituteAdminDashboardProps) => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => {
-                      navigation.push('ListCourseBySemesterAndInstitute',{
-                        semester: 4, institute: adminData.instituteName
+                      navigation.push('ListCourseBySemesterAndInstitute', {
+                        semester: 4,
+                        institute: adminData.instituteName,
                       });
                     }}
                     style={[
@@ -330,8 +369,9 @@ const InstituteAdminDashboard = ({route}: InstituteAdminDashboardProps) => {
                   }}>
                   <TouchableOpacity
                     onPress={() => {
-                      navigation.push('ListCourseBySemesterAndInstitute',{
-                        semester: 5, institute: adminData.instituteName
+                      navigation.push('ListCourseBySemesterAndInstitute', {
+                        semester: 5,
+                        institute: adminData.instituteName,
                       });
                     }}
                     style={[
@@ -357,8 +397,9 @@ const InstituteAdminDashboard = ({route}: InstituteAdminDashboardProps) => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => {
-                      navigation.push('ListCourseBySemesterAndInstitute',{
-                        semester: 6, institute: adminData.instituteName
+                      navigation.push('ListCourseBySemesterAndInstitute', {
+                        semester: 6,
+                        institute: adminData.instituteName,
                       });
                     }}
                     style={[
@@ -393,8 +434,9 @@ const InstituteAdminDashboard = ({route}: InstituteAdminDashboardProps) => {
                   }}>
                   <TouchableOpacity
                     onPress={() => {
-                      navigation.push('ListCourseBySemesterAndInstitute',{
-                        semester: 7, institute: adminData.instituteName
+                      navigation.push('ListCourseBySemesterAndInstitute', {
+                        semester: 7,
+                        institute: adminData.instituteName,
                       });
                     }}
                     style={[
@@ -420,8 +462,9 @@ const InstituteAdminDashboard = ({route}: InstituteAdminDashboardProps) => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => {
-                      navigation.push('ListCourseBySemesterAndInstitute',{
-                        semester: 8, institute: adminData.instituteName
+                      navigation.push('ListCourseBySemesterAndInstitute', {
+                        semester: 8,
+                        institute: adminData.instituteName,
                       });
                     }}
                     style={[

@@ -18,6 +18,7 @@ import java.util.Optional;
 
 @RestController
 @Controller
+@CrossOrigin(origins = "http://localhost:3000")
 public class FacultyController {
     @Autowired
     private FacultyRepo facultyRepo;

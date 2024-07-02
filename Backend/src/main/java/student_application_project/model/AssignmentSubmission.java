@@ -15,5 +15,9 @@ import java.util.List;
 public class AssignmentSubmission {
     @Id
     private String assignmentId;
+    private String assignmentName;
+    private String courseId;
+    private String topicName;
+    private float maxMarks;
     private List<StudentAssignmentSubmission> studentAssignmentSubmission;
 }

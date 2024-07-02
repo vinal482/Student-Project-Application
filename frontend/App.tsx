@@ -43,6 +43,10 @@ import RaiseAToken from './screens/RaiseAToken.tsx';
 import TokenChats from './screens/TokenChats.tsx';
 import GradeSubmissionPerStudent from './screens/GradeSubmissionPerStudent.tsx';
 import ListCourseBySemesterAndInstitute from './screens/ListCourseBySemesterAndInstitute.tsx';
+import EditCourseForAdmin from './screens/EditCourseForAdmin.tsx';
+import CourseRegistration from './screens/CourseRegistration.tsx';
+import ListOfStudentsForAdmin from './screens/ListOfStudentsForAdmin.tsx';
+import CreateStudentByAdmin from './screens/CreateStudentByAdmin.tsx';
 
 export type RootStackParamList = {
   StudentLogin: undefined;
@@ -85,6 +89,10 @@ export type RootStackParamList = {
   TokenChats: {token: string};
   GradeSubmissionPerStudent: {courseId: number; courseName: string};
   ListCourseBySemesterAndInstitute: {semester: number; instituteId: number};
+  EditCourseForAdmin: {courseId: number; courseName: string};
+  CourseRegistration: {courseId: number};
+  ListOfStudentsForAdmin: undefined;
+  CreateStudentByAdmin: undefined;
 };
 
 // Create stack navigator
@@ -93,7 +101,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const App = () => {
   return (
     <NavigationContainer style={{fontFamily: 'arial'}}>
-      <Stack.Navigator initialRouteName="AdminLogin">
+      <Stack.Navigator initialRouteName="FacultyTALogin">
         <Stack.Screen
           name="StudentLogin"
           component={StudentLogin}
@@ -292,6 +300,26 @@ const App = () => {
         <Stack.Screen
           name="ListCourseBySemesterAndInstitute"
           component={ListCourseBySemesterAndInstitute}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="EditCourseForAdmin"
+          component={EditCourseForAdmin}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="CourseRegistration"
+          component={CourseRegistration}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="ListOfStudentsForAdmin"
+          component={ListOfStudentsForAdmin}
+          options={{headerShown: false}}
+        />
+        <Stack.Screen
+          name="CreateStudentByAdmin"
+          component={CreateStudentByAdmin}
           options={{headerShown: false}}
         />
       </Stack.Navigator>

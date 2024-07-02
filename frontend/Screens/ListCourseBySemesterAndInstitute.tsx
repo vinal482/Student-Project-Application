@@ -63,6 +63,16 @@ const ListCourseBySemesterAndInstitute = ({route}: ListCourseBySemesterAndInstit
   const CourseItem = ({item}) => {
     return (
       <TouchableOpacity
+        onPress={()=>
+          {
+            navigation.navigate('EditCourseForAdmin', {
+              courseId: item.id,
+              courseName: item.name,
+              sem: item.semester,
+            });
+          
+          }
+        }
         style={[styles.profileDetailsCard, styles.elevation]}>
         <Text
           style={[
@@ -71,19 +81,6 @@ const ListCourseBySemesterAndInstitute = ({route}: ListCourseBySemesterAndInstit
           ]}>
           {item.name}
         </Text>
-        <Text style={styles.detailValueItem}>{item.instructor}</Text>
-        <View style={styles.separator}></View>
-        <Text style={styles.detailKeyItem}>
-          Description:{' '}
-          <Text
-            style={[
-              styles.detailValueItem,
-              {fontWeight: 'regular', fontSize: 16, color: '#4d4d4d'},
-            ]}>
-            {item.description}
-          </Text>
-        </Text>
-
         <View style={styles.separator}></View>
         <Text style={styles.detailKeyItem}>
           Credits:{' '}

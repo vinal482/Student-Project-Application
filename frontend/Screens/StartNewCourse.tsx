@@ -20,7 +20,6 @@ import Icon from 'react-native-vector-icons/FontAwesome6';
 import SelectDropdown from 'react-native-select-dropdown';
 import Icon3 from 'react-native-vector-icons/MaterialCommunityIcons';
 
-
 type StartNewCourseProps = NativeStackScreenProps<
   RootStackParamList,
   'StartNewCourse'
@@ -42,6 +41,10 @@ const StartNewCourse = ({route}: StartNewCourseProps) => {
   const [domains, setDomains] = React.useState([]);
   const [courseNameError, setCourseNameError] = React.useState(false);
   const [semester, setSemester] = React.useState(0);
+  const [allCourses, setAllCourses] = React.useState([]);
+  const [otherSemesterCourses, setOtherSemesterCourses] = React.useState([]);
+  const [selectedCourse, setSelectedCourse] = React.useState('');
+  const [selectedCourseId, setSelectedCourseId] = React.useState('');
 
   const retrieveData = async () => {
     setLoading(true);
@@ -79,6 +82,20 @@ const StartNewCourse = ({route}: StartNewCourseProps) => {
         temp.push(course);
       }
       await setCourseList(temp);
+      let instituteName = await JSON.parse(
+        await AsyncStorage.getItem('instituteName'),
+      );
+      console.log('Institute Name:', instituteName);
+      const res = await axios.get(
+        `http://10.200.6.190:8080/getAllCoursesByInstituteName`,
+        {
+          params: {
+            instituteName: instituteName,
+          },
+        },
+      );
+      console.log('Response:', res.data);
+      await setAllCourses(res.data);
     } catch (e) {
       console.log('Error:', e);
     } finally {
@@ -95,7 +112,7 @@ const StartNewCourse = ({route}: StartNewCourseProps) => {
     let temp = courseName.trim();
     console.log('Course Name:', temp);
     await setCourseName(temp);
-    if (courseName === '' || courseDescription === '' || credits === '' || semester === 0) {
+    if (courseName === '' || credits === '' || semester === 0) {
       alert('Please fill all the fields');
       return;
     } else if (courseNameError) {
@@ -109,12 +126,12 @@ const StartNewCourse = ({route}: StartNewCourseProps) => {
         `http://10.200.6.190:8080/addCourseAndSetToFaculty`,
         {
           name: courseName,
-          description: courseDescription,
           credits: credits,
           instructor: facultyName,
           facultyEmail: email,
           courseRating: 0,
           semester: semester,
+          prerequisites: selectedCourseId,
         },
       );
       console.log('Response:', response.data);
@@ -127,6 +144,13 @@ const StartNewCourse = ({route}: StartNewCourseProps) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleChangeInDropDownSemester = async (selectedItem) => {
+    console.log(selectedItem);
+    let temp = allCourses.filter(course => course.semester !== selectedItem);
+    await setOtherSemesterCourses(temp);
+    await setSemester(selectedItem);
   };
 
   const handleCourseName = async (text: string) => {
@@ -201,27 +225,6 @@ const StartNewCourse = ({route}: StartNewCourseProps) => {
               <Text
                 style={{color: 'red', fontSize: 14, marginBottom: 5}}></Text>
             )}
-            <Text style={styles.courseContainerTitle}>Description *</Text>
-            <TextInput
-              style={[styles.input, {marginBottom: 0}]}
-              placeholder="Enter Course Description"
-              onChangeText={text => setCourseDescription(text)}
-              placeholderTextColor="#4d4d4d"
-              multiline={true}
-              maxLength={1000}
-            />
-            <Text
-              style={[
-                styles.courseContainerTitle,
-                {
-                  color: '#5d5d5d',
-                  fontWeight: 'regular',
-                  marginBottom: 10,
-                  fontSize: 12,
-                },
-              ]}>
-              * Limit 1000 characters{' '}
-            </Text>
             <Text style={styles.courseContainerTitle}>Credits *</Text>
             <TextInput
               style={[
@@ -248,54 +251,97 @@ const StartNewCourse = ({route}: StartNewCourseProps) => {
               ]}>
               * between 2 to 5{' '}
             </Text>
-            <Text style={styles.courseContainerTitle}>Semester</Text>
+            <Text style={styles.courseContainerTitle}>Semester *</Text>
             {/* select dropdown semester from 1 to 8 */}
             <SelectDropdown
-                    data={[
-                      {id: 1, name: 'Semester 1'},
-                      {id: 2, name: 'Semester 2'},
-                      {id: 3, name: 'Semester 3'},
-                      {id: 4, name: 'Semester 4'},
-                      {id: 5, name: 'Semester 5'},
-                      {id: 6, name: 'Semester 6'},
-                      {id: 7, name: 'Semester 7'},
-                      {id: 8, name: 'Semester 8'},
-                    ]}
-                    onSelect={(selectedItem, index) => {
-                      console.log(selectedItem, index);
-                      setSemester(selectedItem.id);
-                    }}
-                    renderButton={(selectedItem, isOpened) => {
-                      return (
-                        <View style={styles.dropdownButtonStyle}>
-                          <Text style={styles.dropdownButtonTxtStyle}>
-                            {(selectedItem && selectedItem.name) ||
-                              'Select a topic*'}
-                          </Text>
-                          <Icon3
-                            name={isOpened ? 'chevron-up' : 'chevron-down'}
-                            style={styles.dropdownButtonArrowStyle}
-                            color="#2d2d2d"
-                          />
-                        </View>
-                      );
-                    }}
-                    renderItem={(item, index, isSelected) => {
-                      return (
-                        <View
-                          style={{
-                            ...styles.dropdownItemStyle,
-                            ...(isSelected && {backgroundColor: '#D2D9DF'}),
-                          }}>
-                          <Text style={styles.dropdownItemTxtStyle}>
-                            {item.name}
-                          </Text>
-                        </View>
-                      );
-                    }}
-                    showsVerticalScrollIndicator={true}
-                    dropdownStyle={styles.dropdownMenuStyle}
-                  />
+              data={[
+                {id: 1, name: 'Semester 1'},
+                {id: 2, name: 'Semester 2'},
+                {id: 3, name: 'Semester 3'},
+                {id: 4, name: 'Semester 4'},
+                {id: 5, name: 'Semester 5'},
+                {id: 6, name: 'Semester 6'},
+                {id: 7, name: 'Semester 7'},
+                {id: 8, name: 'Semester 8'},
+              ]}
+              onSelect={(selectedItem, index) => {
+                console.log(selectedItem, index);
+                handleChangeInDropDownSemester(selectedItem.id);
+              }}
+              renderButton={(selectedItem, isOpened) => {
+                return (
+                  <View style={styles.dropdownButtonStyle}>
+                    <Text style={styles.dropdownButtonTxtStyle}>
+                      {(selectedItem && selectedItem.name) ||
+                        'Select semester*'}
+                    </Text>
+                    <Icon3
+                      name={isOpened ? 'chevron-up' : 'chevron-down'}
+                      style={styles.dropdownButtonArrowStyle}
+                      color="#2d2d2d"
+                    />
+                  </View>
+                );
+              }}
+              renderItem={(item, index, isSelected) => {
+                return (
+                  <View
+                    style={{
+                      ...styles.dropdownItemStyle,
+                      ...(isSelected && {backgroundColor: '#D2D9DF'}),
+                    }}>
+                    <Text style={styles.dropdownItemTxtStyle}>{item.name}</Text>
+                  </View>
+                );
+              }}
+              showsVerticalScrollIndicator={true}
+              dropdownStyle={styles.dropdownMenuStyle}
+            />
+
+            {semester !== 0 ? (
+              <>
+                <Text style={styles.courseContainerTitle}>
+                  Prerequisite Course
+                </Text>
+                <SelectDropdown
+                  data={otherSemesterCourses}
+                  onSelect={(selectedItem, index) => {
+                    console.log(selectedItem, index);
+                    setSelectedCourseId(selectedItem.id);
+                  }}
+                  renderButton={(selectedItem, isOpened) => {
+                    return (
+                      <View style={styles.dropdownButtonStyle}>
+                        <Text style={styles.dropdownButtonTxtStyle}>
+                          {(selectedItem && selectedItem.name) ||
+                            'Select Course*'}
+                        </Text>
+                        <Icon3
+                          name={isOpened ? 'chevron-up' : 'chevron-down'}
+                          style={styles.dropdownButtonArrowStyle}
+                          color="#2d2d2d"
+                        />
+                      </View>
+                    );
+                  }}
+                  renderItem={(item, index, isSelected) => {
+                    return (
+                      <View
+                        style={{
+                          ...styles.dropdownItemStyle,
+                          ...(isSelected && {backgroundColor: '#D2D9DF'}),
+                        }}>
+                        <Text style={styles.dropdownItemTxtStyle}>
+                          {item.name}
+                        </Text>
+                      </View>
+                    );
+                  }}
+                  showsVerticalScrollIndicator={true}
+                  dropdownStyle={styles.dropdownMenuStyle}
+                />
+              </>
+            ) : null}
           </View>
           <Pressable
             style={styles.submitButton}

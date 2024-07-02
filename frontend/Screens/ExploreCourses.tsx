@@ -40,14 +40,26 @@ const ExploreCourses = ({route}: ExploreCoursesProps) => {
       const role = JSON.parse(await AsyncStorage.getItem('role'));
       await setRole(role);
       let emailId = '';
+      let semester = 0;
       if (role === '0') {
         emailId = JSON.parse(await AsyncStorage.getItem('taEmail'));
       } else {
         emailId = JSON.parse(await AsyncStorage.getItem('email'));
+        let temp = JSON.parse(await AsyncStorage.getItem('semester'));        
+        console.log('Semester:', temp);
+        // convert semester to number
+        temp = parseInt(temp);
+        semester = temp;
+        instituteName = await JSON.parse(await AsyncStorage.getItem('instituteName'));
       }
       // const emailId = JSON.parse(await AsyncStorage.getItem('email'));
       await setEmail(emailId);
-      const response = await axios.get('http://10.200.6.190:8080/courses');
+      const response = await axios.get('http://10.200.6.190:8080/getCoursesBySemester', {
+        params: {
+          semester: semester,
+          instituteName: instituteName,
+        },
+      });
       console.log('Response:', response.data);
       console.log('Email:', emailId);
       await setCourses(response.data);
